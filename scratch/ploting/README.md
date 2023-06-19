@@ -1,0 +1,1 @@
+Geração de imagens de resultados;

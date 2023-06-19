@@ -1,0 +1,1 @@
+Códigos referentes às estratégias implementadas.
