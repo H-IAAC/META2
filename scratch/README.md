@@ -1,0 +1,1 @@
+Diretório que contém os projetos em desenvolvimento pela equipe.
