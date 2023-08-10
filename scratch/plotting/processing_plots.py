@@ -9,8 +9,17 @@ import copy
 import os
 
 
-def generate_clusters(reducer, data_label, supervised = False):
+def generate_clusters(reducer : TSNE, data_label : np.ndarray, supervised : bool = False) -> pd.DataFrame:
   """
+  Generates clusters based on data and a dimensionality reduction method.
+
+    Args:
+      reducer : a dimensionality reducing class that contains "fit_transform" method, like TSNE or UMAP.
+      data_label(np.ndarray) : a data array where targets are in the first column.
+      supervised(boolean) : specifies if the dimensionality reduction method is used in its supervised form.
+
+    Returns:
+      pd.DataFrame : returns a dataframe containing label, x and y of data reduced to 2 dimensions
 
   """
 

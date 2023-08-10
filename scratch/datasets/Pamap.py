@@ -4,7 +4,7 @@ import os
 import json
 import time
 from sklearn.manifold import TSNE
-from scratch.dataset.processing import reshape_arrays, apply_fourier_transform, get_inbetween_data_indices, group_sensors 
+from scratch.datasets.processing import reshape_arrays, apply_fourier_transform, get_inbetween_data_indices, group_sensors 
 from scratch.plotting.processing_plots import create_count_histogram, plot_similarity_matrix
 import configparser
 
@@ -109,7 +109,14 @@ class PAMAP2DataProcessor():
         self.use_cols = [i for i in self.namecols if i not in self.drop_cols]
         self.processing_time = 0.0
 
-  def get_param_cfg(self):
+  def get_param_cfg(self) -> configparser.ConfigParser():
+    """
+    Gets class parameters as ConfigParser
+
+    Returns:
+      configparser.ConfigParser: An configParser object containing this objest's parameters. 
+      Used to compare preprocessing parameters with previous saved ones, reducing processing time.
+  """
     paramcfg = configparser.ConfigParser()
     paramcfg.optionxform = str
     paramcfg["base_parameters"] = {'frequency': self.frequency,
