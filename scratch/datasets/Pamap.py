@@ -5,7 +5,7 @@ import json
 import time
 from sklearn.manifold import TSNE
 from scratch.datasets.processing import reshape_arrays, apply_fourier_transform, get_inbetween_data_indices, group_sensors 
-from scratch.plotting.processing_plots import create_count_histogram, plot_similarity_matrix
+from scratch.plotting.processing_plots import create_count_histogram, plot_similarity_matrix, plot_clustering
 import configparser
 
 class PAMAP2DataProcessor():
@@ -263,10 +263,23 @@ class PAMAP2DataProcessor():
           20: "playing soccer", 21:"none", 22:"none", 23:"none", 24: "rope jumping"}, filepath = destination_dir)
 
     #Create second graph
-    reducer_columns = [i for i in correct_column_order if i not in ["activityID"]]
+    reducer_class_columns = [i for i in correct_column_order if i not in ["activityID"]]
     reducer = TSNE(n_components=2, perplexity = 32*4 + 4, early_exaggeration = (26*1.5)+1)
-    plot_similarity_matrix(reducer,  (total_df.reindex(columns = ["activityID"] + reducer_columns)).to_numpy(), label = {1: "Lying", 2: "Sitting", 3: "Standing", 4: "Walking", 5: "Running", 6: "Cycling", 7: "Nordic Walking",  9: "Wathcing TV",10: "computer work", 11:"car driving", 12: "ascending stairs", 13: "descending stairs", 16: "vacuum cleaning", 17: "ironing", 18: "folding laundry", 19: "house cleaning",
-          20: "playing soccer", 24: "rope jumping"}, filepath = destination_dir)
+    plot_similarity_matrix(reducer,  ((total_df.reindex(columns = ["activityID"] + reducer_class_columns)).drop(labels = ["subjectID", "timestamp"], axis = 'columns')).to_numpy(), label = {1: "Lying", 2: "Sitting", 3: "Standing", 4: "Walking", 5: "Running", 6: "Cycling", 7: "Nordic Walking",  9: "Wathcing TV",10: "computer work", 11:"car driving", 12: "ascending stairs", 13: "descending stairs", 16: "vacuum cleaning", 17: "ironing", 18: "folding laundry", 19: "house cleaning",
+          20: "playing soccer", 24: "rope jumping"}, filepath = destination_dir, title = "classes heatmap")
+    
+    plot_clustering(reducer,  ((total_df.reindex(columns = ["activityID"] + reducer_class_columns)).drop(labels = ["subjectID", "timestamp"], axis = 'columns')).to_numpy(), labels = {1: "Lying", 2: "Sitting", 3: "Standing", 4: "Walking", 5: "Running", 6: "Cycling", 7: "Nordic Walking",  9: "Wathcing TV",10: "computer work", 11:"car driving", 12: "ascending stairs", 13: "descending stairs", 16: "vacuum cleaning", 17: "ironing", 18: "folding laundry", 19: "house cleaning",
+          20: "playing soccer", 24: "rope jumping"}, title = "classes clustering", filepath = destination_dir, filename = "classes clustering")
+    
+    reducer_subject_columns = [i for i in correct_column_order if i not in ["subjectID"]]
+    reducer = TSNE(n_components=2, perplexity = 32*4 + 4, early_exaggeration = (26*1.5)+1)
+    plot_similarity_matrix(reducer,  ((total_df.reindex(columns = ["subjectID"] + reducer_subject_columns)).drop(labels = ["activityID", "timestamp"], axis = 'columns')).to_numpy(),
+                           label = {1: "subject101", 2: "subject102", 3: "subject103", 4: "subject104", 5: "subject105", 6: "subject106", 7: "subject107",
+                                                    8: "subject108", 9: "subject109"}, filepath = destination_dir, title = "subjects heatmap")
+    
+    plot_clustering(reducer,  ((total_df.reindex(columns = ["subjectID"] + reducer_subject_columns)).drop(labels = ["activityID", "timestamp"], axis = 'columns')).to_numpy(),
+                           labels = {1: "subject101", 2: "subject102", 3: "subject103", 4: "subject104", 5: "subject105", 6: "subject106", 7: "subject107",
+                                                    8: "subject108", 9: "subject109"}, title = "classes clustering", filepath = destination_dir, filename = "subjects clustering")
 
     end_time = time.time()
     print(f"Elapsed time in seconds: {round((end_time - start_time), 2)}")

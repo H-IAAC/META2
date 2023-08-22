@@ -94,7 +94,7 @@ def calculate_similarities(distances : np.ndarray) -> np.ndarray:
 
   return similarities
 
-def plot_similarity_matrix(reducer : TSNE, data_label : np.ndarray, label : dict[int, str], filepath : str):
+def plot_similarity_matrix(reducer : TSNE, data_label : np.ndarray, label : dict[int, str], filepath : str, title : str):
 
   """
   Plots similarity matrix and saves it to filepath.
@@ -104,6 +104,7 @@ def plot_similarity_matrix(reducer : TSNE, data_label : np.ndarray, label : dict
       data_label(np.ndarray) : an array containing sensors data and the activity label in the first column.
       label(dict[int, str]): a dictionary mapping each activityID value to its activity.
       filepath(str) : where to save the matrix heatmap made.
+      title(str) : name for the .png file generated.
 
   """
 
@@ -115,7 +116,35 @@ def plot_similarity_matrix(reducer : TSNE, data_label : np.ndarray, label : dict
                   columns = [i for i in label.values()])
   plt.figure(figsize = (16,16))
   sns.heatmap(df_cm, annot=True)
-  plt.savefig(os.path.join(filepath  , "heatmap.png"))
+  plt.savefig(os.path.join(filepath  , title + ".png"))
+
+def plot_scatter(df, figsize: tuple = (12, 12), title: str = None, labels: dict = None, filepath : str = None, filename : str = None):
+    fig, ax = plt.subplots(figsize=figsize)
+    for label, group_df in df.groupby("label"):
+        label = labels[label] if labels is not None else label
+        ax.scatter(group_df.x, group_df.y, label=label)
+        colormap = plt.cm.gist_ncar #nipy_spectral, Set1,Paired  
+        colorst = [colormap(i) for i in np.linspace(0, 0.9,len(ax.collections))]       
+        for t,j1 in enumerate(ax.collections):
+          j1.set_color(colorst[t])
+
+    ax.legend()
+    plt.title(title)
+    plt.savefig(os.path.join(filepath, filename + ".png"))
+  
+def plot_clustering(reducer, data_label, labels, title, supervised = False, is_original = True, original_data = None, filepath : str = None, filename : str = None):
+  if(is_original):
+    original_data = data_label.T[1:].T
+  else:
+    original_data = original_data.T[1:].T
+  data = data_label.T[1:].T
+  if supervised:
+    embedding = reducer.fit_transform(data, y = data_label.T[0].T)
+  else:
+    embedding = reducer.fit_transform(data)
+  result = pd.DataFrame(embedding, columns=["x", "y"])
+  result["label"] = data_label.T[0].T
+  plot_scatter(result, figsize = (10, 10), title=title, labels = labels, filepath = filepath, filename = filename)
 
 def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filepath : str):
   """
