@@ -59,11 +59,9 @@ class PAMAP2DataProcessor():
 
       """
 
-      #If it is ever transformed to a python file, undo the following comments:
-
       self.file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
       self.use_cfg = use_cfg
-      #And remove this line
+      
       self.config_file = config_file
       self.namecols =['timestamp', 'activityID', 'heartRate', 'IMU_hand_temp', 'IMU_hand_accX', 'IMU_hand_accY', 'IMU_hand_accZ', 'IMU_hand_acc6X',
             'IMU_hand_acc6Y', 'IMU_hand_acc6Z', 'IMU_hand_gyroX', 'IMU_hand_gyroY', 'IMU_hand_gyroZ', 'IMU_hand_magX', 'IMU_hand_magY',
@@ -279,7 +277,7 @@ class PAMAP2DataProcessor():
     
     plot_clustering(reducer,  ((total_df.reindex(columns = ["subjectID"] + reducer_subject_columns)).drop(labels = ["activityID", "timestamp"], axis = 'columns')).to_numpy(),
                            labels = {1: "subject101", 2: "subject102", 3: "subject103", 4: "subject104", 5: "subject105", 6: "subject106", 7: "subject107",
-                                                    8: "subject108", 9: "subject109"}, title = "classes clustering", filepath = destination_dir, filename = "subjects clustering")
+                                                    8: "subject108", 9: "subject109"}, title = "subjects clustering", filepath = destination_dir, filename = "subjects clustering")
 
     end_time = time.time()
     print(f"Elapsed time in seconds: {round((end_time - start_time), 2)}")

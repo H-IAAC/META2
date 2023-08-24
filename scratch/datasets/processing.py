@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
 def apply_fourier_transform(array : np.ndarray , lower_index : int, top_limit : int) -> np.ndarray:
   """
@@ -15,9 +14,7 @@ def apply_fourier_transform(array : np.ndarray , lower_index : int, top_limit : 
       np.ndarray : the parameter "array" with FFT applied on selected columns, note it is not an inPlace transform
 
   """
-  transformed = array.copy()
-  transformed[:, lower_index:top_limit] = StandardScaler().fit_transform(transformed[:, lower_index:top_limit])
-  return transformed
+  array[:, lower_index:top_limit] = np.fft.fft(array[:, lower_index:top_limit])
 
 def group_sensors(array : np.ndarray, distance : int) -> np.ndarray:
   """
