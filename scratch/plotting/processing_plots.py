@@ -107,9 +107,9 @@ def plot_similarity_matrix(reducer : TSNE, data_label : np.ndarray, label : dict
       title(str) : name for the .png file generated.
 
   """
-
+  max_classes = max(label.keys())
   embedding = generate_clusters(reducer, data_label, True)
-  centroids = calculate_centroids(embedding)
+  centroids = calculate_centroids(embedding, max_classes)
   distances = calculate_distances(centroids)
   similarities = calculate_similarities(distances)
   df_cm = pd.DataFrame(similarities, index = [i for i in label.values()],
@@ -146,7 +146,7 @@ def plot_clustering(reducer, data_label, labels, title, supervised = False, is_o
   result["label"] = data_label.T[0].T
   plot_scatter(result, figsize = (10, 10), title=title, labels = labels, filepath = filepath, filename = filename)
 
-def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filepath : str):
+def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filepath : str, num_subjects : int = 9):
   """
   Creates activity count histograms, for all subjects, and creates a bar plot for each one representing the normalized activity count. Saves in filepath.
 
@@ -159,10 +159,10 @@ def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filep
   values = []
   labels = []
   matrix = []
-  for i in range(9):
+  for i in range(num_subjects):
     matrix.append([])
   for i in range(0, max(activities.keys()) + 1):
-    for j in range(9):
+    for j in range(num_subjects):
       matrix[j].append(0)
     values.append(0)
     if i != 0:
@@ -177,7 +177,7 @@ def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filep
   #Matrix does the same, but for every single line
 
   while 0 in values:
-    for i in range(9):
+    for i in range(num_subjects):
       matrix[i].pop(values.index(0))
     values.pop(values.index(0))
 
@@ -185,7 +185,7 @@ def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filep
     labels.pop(labels.index("none"))
 
   fig, ax = plt.subplots(1, 1, figsize = (24,14))
-  ax.hist(df["activityID"], bins = 18)
+  ax.hist(df["activityID"], bins = len(labels))
 
   # Set title
   ax.set_title("Histograma contagem de atividades")
@@ -205,7 +205,7 @@ def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filep
   # Show plot
   plt.savefig(os.path.join(filepath, "contagem.png"))
 
-  for i in range(9):
+  for i in range(num_subjects):
     subject_labels = copy.deepcopy(labels)
     #Normalize and count bins
     for j in range(len(matrix[i])):

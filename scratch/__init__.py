@@ -1,3 +1,3 @@
 from .benchmarks import *
-from .dataset import *
+from .datasets import *
 from .plotting import *
