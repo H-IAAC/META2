@@ -4,6 +4,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 from scratch.datasets.pamap import PAMAP2DataProcessor
 from scratch.datasets.ucihar import UCIHARDataProcessor
+from scratch.datasets.dsads import DSADSDataProcessor
 from scratch.benchmarks.split import ClassSplit, SubjectSplit, SamplerInterface
 
 class HARDataset(Dataset):
@@ -104,5 +105,13 @@ class DatasetFactory():
           for df in dfs:
             datasets.append(HARDataset(df, activities = activities_to_use))
 
+        elif dataset == "DSADS":
+          processor = DSADSDataProcessor(use_cfg = True, config_file = config_file, **kwargs)
+          total_df = processor.process_data()
+          use_df = ClassSplit([activities_to_use]).split(total_df)
+          dfs = sampler.split(use_df[0])
+          datasets = []
+          for df in dfs:
+            datasets.append(HARDataset(df, activities = activities_to_use))
 
         return datasets

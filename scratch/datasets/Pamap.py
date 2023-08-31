@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import os
-import json
 import time
 from sklearn.manifold import TSNE
 from scratch.datasets.processing import reshape_arrays, apply_fourier_transform, get_inbetween_data_indices, group_sensors 

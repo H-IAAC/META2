@@ -60,7 +60,7 @@ class UCIHARDataProcessor():
         self.cfgparser = None
         self.persist = persist
         self.radix_name = radix_name
-        self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "PAMAP2")   
+        self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "UCIHAR")   
         self.folder_name = (str(radix_name)+ str("_")+ str(time_window) + "_" + str(frequency))
         self.frequency = frequency
         self.time_window = time_window
