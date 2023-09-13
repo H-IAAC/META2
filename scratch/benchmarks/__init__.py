@@ -1,2 +1,2 @@
-from .benchmark_factory import *
+from .benchmark_factory import BenchmarkFactory
 from .split import *

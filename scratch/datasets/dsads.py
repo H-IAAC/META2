@@ -176,7 +176,7 @@ class DSADSDataProcessor():
 
     #reindexing
     total = total.reindex(columns = correct_column_order)
-    total = total.set_axis([i for i in range(total.shape[0])], axis = "index")
+    total_df = total.set_axis([i for i in range(total.shape[0])], axis = "index")
 
     if(self.persist):
       destination_dir = os.path.join(self.file_path, "Datasets", "Processed", "DSADS", self.folder_name)
