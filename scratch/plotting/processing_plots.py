@@ -7,6 +7,7 @@ from sklearn.manifold import TSNE
 import math
 import copy
 import os
+from pyDRMetrics.pyDRMetrics import DRMetrics
 
 
 def generate_clusters(reducer : TSNE, data_label : np.ndarray, supervised : bool = False) -> pd.DataFrame:
@@ -118,7 +119,7 @@ def plot_similarity_matrix(reducer : TSNE, data_label : np.ndarray, label : dict
   sns.heatmap(df_cm, annot=True)
   plt.savefig(os.path.join(filepath  , title + ".png"))
 
-def plot_scatter(df, figsize: tuple = (12, 12), title: str = None, labels: dict = None, filepath : str = None, filename : str = None):
+def plot_scatter(df, figsize: tuple = (12, 12), title: str = None, labels: dict = None, filepath : str = None, filename : str = None, coeficients : dict = None):
     fig, ax = plt.subplots(figsize=figsize)
     for label, group_df in df.groupby("label"):
         label = labels[label] if labels is not None else label
@@ -129,9 +130,10 @@ def plot_scatter(df, figsize: tuple = (12, 12), title: str = None, labels: dict 
           j1.set_color(colorst[t])
 
     ax.legend()
-    plt.title(title)
+    plt.suptitle(title)
+    plt.title(f"Coefficients: Silhuette score: {coeficients['silhuette']}, Contiuity: {coeficients['continuity']}, Trustworthiness: {coeficients['trustworthiness']}, LCMC: {coeficients['lcmc']}")
     plt.savefig(os.path.join(filepath, filename + ".png"))
-  
+
 def plot_clustering(reducer, data_label, labels, title, supervised = False, is_original = True, original_data = None, filepath : str = None, filename : str = None):
   if(is_original):
     original_data = data_label.T[1:].T
@@ -144,7 +146,14 @@ def plot_clustering(reducer, data_label, labels, title, supervised = False, is_o
     embedding = reducer.fit_transform(data)
   result = pd.DataFrame(embedding, columns=["x", "y"])
   result["label"] = data_label.T[0].T
-  plot_scatter(result, figsize = (10, 10), title=title, labels = labels, filepath = filepath, filename = filename)
+  coeficients = {}
+  coeficients['silhuette'] = silhouette_score(embedding, result["label"])
+  drm = DRMetrics(original_data, embedding)
+  neighbors = np.unique(result['label']).shape[0]
+  coeficients['continuity'] = drm.C[neighbors]
+  coeficients['trustworthiness'] = drm.T[neighbors]
+  coeficients['lcmc'] = drm.LCMC[neighbors]
+  plot_scatter(result, figsize = (10, 10), title=title, labels = labels, filepath = filepath, filename = filename, coeficients = coeficients)
 
 def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filepath : str, num_subjects : int = 9):
   """
