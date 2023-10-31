@@ -7,7 +7,7 @@ from sklearn.manifold import TSNE
 import math
 import copy
 import os
-from pyDRMetrics.pyDRMetrics import DRMetrics
+from scratch.utils.dr_metrics import compute_quality_criteria, compute_coranking_matrix
 
 
 def generate_clusters(reducer : TSNE, data_label : np.ndarray, supervised : bool = False) -> pd.DataFrame:
@@ -91,7 +91,7 @@ def calculate_similarities(distances : np.ndarray) -> np.ndarray:
   for i in range(distances.shape[0]):
     for j in range(distances.shape[0]):
       #using sigmoid clamping function
-      similarities[i][j] = 1 / (1 + (distances[i][j]/np.amax(distances)))
+      similarities[i][j] = np.exp(-0.004 * distances[i][j])
 
   return similarities
 
@@ -131,7 +131,7 @@ def plot_scatter(df, figsize: tuple = (12, 12), title: str = None, labels: dict 
 
     ax.legend()
     plt.suptitle(title)
-    plt.title(f"Coefficients: Silhuette score: {coeficients['silhuette']}, Contiuity: {coeficients['continuity']}, Trustworthiness: {coeficients['trustworthiness']}, LCMC: {coeficients['lcmc']}")
+    plt.title(f"Coefficients: Silhuette score: {coeficients['silhuette']:.4f}, Contiuity: {coeficients['continuity']:.4f}, Trustworthiness: {coeficients['trustworthiness']:.4f}, LCMC: {coeficients['lcmc']:.4f}")
     plt.savefig(os.path.join(filepath, filename + ".png"))
 
 def plot_clustering(reducer, data_label, labels, title, supervised = False, is_original = True, original_data = None, filepath : str = None, filename : str = None):
@@ -148,11 +148,14 @@ def plot_clustering(reducer, data_label, labels, title, supervised = False, is_o
   result["label"] = data_label.T[0].T
   coeficients = {}
   coeficients['silhuette'] = silhouette_score(embedding, result["label"])
-  drm = DRMetrics(original_data, embedding)
+  
+  #Get metrics
   neighbors = np.unique(result['label']).shape[0]
-  coeficients['continuity'] = drm.C[neighbors]
-  coeficients['trustworthiness'] = drm.T[neighbors]
-  coeficients['lcmc'] = drm.LCMC[neighbors]
+  drcoef = compute_quality_criteria(compute_coranking_matrix(original_data, embedding, n_jobs=2), max_K = neighbors + 1)
+
+  coeficients['continuity'] = drcoef['continuity'][neighbors]
+  coeficients['trustworthiness'] = drcoef['trustworthiness'][neighbors]
+  coeficients['lcmc'] = drcoef['lcmc'][neighbors]
   plot_scatter(result, figsize = (10, 10), title=title, labels = labels, filepath = filepath, filename = filename, coeficients = coeficients)
 
 def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filepath : str, num_subjects : int = 9):
