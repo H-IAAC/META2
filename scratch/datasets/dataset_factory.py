@@ -27,11 +27,14 @@ class HARDataset(Dataset):
       """
         self.target = np.array(list(map(lambda x, activities = activities: activities.index(int(x)), list(dataframe[target_column]))))
         self.subject = dataframe["subjectID"].to_numpy()
-        self.timestamp = dataframe["timestamp"].to_numpy()
+        if('timestamp') in dataframe.columns: 
+          self.timestamp = dataframe["timestamp"].to_numpy()
         self.grouped_samples = 0
-
-        self.data = (dataframe.drop([target_column] + ["subjectID"] + ["timestamp"], axis = 1, inplace=False))
-
+        if('timestamp') in dataframe.columns: 
+          self.data = (dataframe.drop([target_column] + ["subjectID"] + ["timestamp"], axis = 1, inplace=False))
+        else:
+          self.data = (dataframe.drop([target_column] + ["subjectID"], axis = 1, inplace=False))
+          
         for i in self.data.columns:
           if self.data.columns[0][0: -2] in i:
             self.grouped_samples += 1

@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 import os
+import json
 import time
 from sklearn.manifold import TSNE
 from scratch.datasets.processing import reshape_arrays, apply_fourier_transform, get_inbetween_data_indices, group_sensors 
 from scratch.plotting.processing_plots import create_count_histogram, plot_similarity_matrix, plot_clustering
+from scratch.utils.experimentmanager import ExperimentManager
 import configparser
 
 class PAMAP2DataProcessor():
@@ -16,7 +18,7 @@ class PAMAP2DataProcessor():
 
   def __init__(self, persist : bool = True, use_cfg : bool = True, config_file : str = "PAMAP_5.2_20.cfg",
       radix_name : str = "base", frequency : float = 20.0, time_window : float = 5.2, use_optional_data : bool = True, ms_to_remove : int = 10000,
-      drop_cols : list[str]= [
+      drop_cols : list= [
             "IMU_hand_acc6X",
             "IMU_hand_acc6Y",
             "IMU_hand_acc6Z",
@@ -39,8 +41,8 @@ class PAMAP2DataProcessor():
             "IMU_ankle_Z",
             "IMU_ankle_W"
       ],
-      normalize_cols : list[str] = [],
-      fft_cols : list[str] = []):
+      normalize_cols : list = [],
+      fft_cols : list = []):
 
       """Constructor
 
@@ -58,7 +60,9 @@ class PAMAP2DataProcessor():
 
       """
 
-      self.file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+      self.exp = ExperimentManager()
+
+      # self.file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
       self.use_cfg = use_cfg
       
       self.config_file = config_file
@@ -71,11 +75,15 @@ class PAMAP2DataProcessor():
             'IMU_ankle_magZ', 'IMU_ankle_X', 'IMU_ankle_Y', 'IMU_ankle_Z', 'IMU_ankle_W']
 
       if(use_cfg):
-        self.cfgparser = configparser.ConfigParser()
+        # Modified
+        # self.cfgparser = configparser.ConfigParser()
+        self.cfgparser = self.exp.new_parser("pamap_parser")
         self.cfgparser.optionxform = str
-        self.cfgparser.read(os.path.join(self.file_path, "Configs", "preprocessing", self.config_file))
+        # self.cfgparser.read(os.path.join(self.file_path, "Configs", "preprocessing", self.config_file))
+        self.cfgparser.read(os.path.join(self.exp.get_dir_path("preprocessing"), self.config_file))
         self.persist = self.cfgparser["file"]["persist"]
-        self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "PAMAP2")   
+        # self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "PAMAP2")
+        self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "PAMAP2")   
         self.folder_name = (str(self.cfgparser["file"]["radix_name"])+ "_" + self.cfgparser["base_parameters"]["time_window"] + "_" + self.cfgparser["base_parameters"]["frequency"])
         self.frequency = float(self.cfgparser["base_parameters"]["frequency"])
         self.time_window = float(self.cfgparser["base_parameters"]["time_window"])
@@ -94,7 +102,9 @@ class PAMAP2DataProcessor():
         self.cfgparser = None
         self.persist = persist
         self.radix_name = radix_name
-        self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "PAMAP2")   
+        # Modified
+        # self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "PAMAP2")
+        self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "PAMAP2")   
         self.folder_name = (str(radix_name)+ str("_")+ str(time_window) + "_" + str(frequency))
         self.frequency = frequency
         self.time_window = time_window
@@ -114,7 +124,8 @@ class PAMAP2DataProcessor():
       configparser.ConfigParser: An configParser object containing this objest's parameters. 
       Used to compare preprocessing parameters with previous saved ones, reducing processing time.
   """
-    paramcfg = configparser.ConfigParser()
+    # Modified
+    paramcfg = self.exp.new_parser("pamap_parser")
     paramcfg.optionxform = str
     paramcfg["base_parameters"] = {'frequency': self.frequency,
                                    'time_window' : self.time_window,
@@ -144,15 +155,17 @@ class PAMAP2DataProcessor():
     if(not self.use_cfg):
         self.cfgparser = self.get_param_cfg()
     
-    for i in os.listdir(os.path.join(self.file_path, "Datasets", "Processed", "PAMAP2")):
-      rdparser = configparser.ConfigParser()
+    # Modified
+    for i in os.listdir(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "PAMAP2")):
+      rdparser = configparser.ConfigParser() # TODO: como isso funciona? o que fazer? como usar o exp aqui?
       rdparser.optionxform = str  
 
-      rdparser.read(os.path.join(self.file_path, "Datasets", "Processed", "PAMAP2", i, "configs.cfg"))
+      # Modified
+      rdparser.read(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "PAMAP2", i, "configs.cfg"))
         
       if not (False in [self.cfgparser[i] == rdparser[i] for i in self.cfgparser.sections() if i != "file"]):
           print("Found processed data according to pre-processing, copying data...")
-          total_df = pd.read_table(os.path.join(self.file_path, "Datasets", "Processed", "PAMAP2", i, "dataset.csv"), sep='\s+')
+          total_df = pd.read_table(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "PAMAP2", i, "dataset.csv"), sep='\s+')
           return total_df
 
     # Check whether frequency and time_window are compatible with the dataset
@@ -247,7 +260,7 @@ class PAMAP2DataProcessor():
       data_frames[i] = data_frames[i].reindex(columns = correct_column_order)
 
     if(self.persist):
-      destination_dir = os.path.join(self.file_path, "Datasets", "Processed", "PAMAP2", self.folder_name)
+      destination_dir = os.path.join(self.exp.get_dir_path("datasets"), "Processed", "PAMAP2", self.folder_name)
       os.makedirs(destination_dir , exist_ok = True)
 
     total_df = pd.concat(data_frames, axis = 0)

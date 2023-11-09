@@ -5,6 +5,7 @@ import time
 from sklearn.manifold import TSNE
 from scratch.datasets.processing import apply_fourier_transform
 from scratch.plotting.processing_plots import create_count_histogram, plot_similarity_matrix, plot_clustering
+from scratch.utils.experimentmanager import ExperimentManager
 import configparser
 
 class DSADSDataProcessor():
@@ -31,7 +32,7 @@ class DSADSDataProcessor():
       """
 
       #If it is ever transformed to a python file, undo the following comments:
-
+      self.exp = ExperimentManager()  
       self.file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
       self.use_cfg = use_cfg
       #And remove this line
@@ -51,7 +52,7 @@ class DSADSDataProcessor():
         self.cfgparser.optionxform = str
         self.cfgparser.read(os.path.join(self.file_path, "Configs", "preprocessing", self.config_file))
         self.persist = self.cfgparser["file"]["persist"]
-        self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "DSADS")
+        self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "DSADS")
         self.folder_name = (str(self.cfgparser["file"]["radix_name"])+ "_" + self.cfgparser["base_parameters"]["time_window"] + "_" + self.cfgparser["base_parameters"]["frequency"])
         self.frequency = float(self.cfgparser["base_parameters"]["frequency"])
         self.time_window = float(self.cfgparser["base_parameters"]["time_window"])
@@ -69,7 +70,7 @@ class DSADSDataProcessor():
         self.cfgparser = None
         self.persist = persist
         self.radix_name = radix_name
-        self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "DSADS")
+        self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "DSADS")
         self.folder_name = (str(radix_name)+ str("_")+ str(time_window) + "_" + str(frequency))
         self.frequency = frequency
         self.time_window = time_window
@@ -109,21 +110,21 @@ class DSADSDataProcessor():
     Returns:
       pd.DataFrame : processed PAMAP2 data.
     '''
-    os.makedirs(os.path.join(self.file_path, "Datasets", "Processed", "DSADS") , exist_ok = True)
+    os.makedirs(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "DSADS") , exist_ok = True)
     start_time = time.time()
     #identify already created processing parameters
     if(not self.use_cfg):
         self.cfgparser = self.get_param_cfg()
 
-    for i in os.listdir(os.path.join(self.file_path, "Datasets", "Processed", "DSADS")):
+    for i in os.listdir(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "DSADS")):
       rdparser = configparser.ConfigParser()
       rdparser.optionxform = str
 
-      rdparser.read(os.path.join(self.file_path, "Datasets", "Processed", "DSADS", i, "configs.cfg"))
+      rdparser.read(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "DSADS", i, "configs.cfg"))
 
       if not (False in [self.cfgparser[i] == rdparser[i] for i in self.cfgparser.sections() if i != "file"]):
           print("Found processed data according to pre-processing, copying data...")
-          total_df = pd.read_table(os.path.join(self.file_path, "Datasets", "Processed", "DSADS", i, "dataset.csv"), sep='\s+')
+          total_df = pd.read_table(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "DSADS", i, "dataset.csv"), sep='\s+')
           return total_df
 
     # Check whether frequency and time_window are compatible with the dataset
@@ -179,7 +180,7 @@ class DSADSDataProcessor():
     total_df = total.set_axis([i for i in range(total.shape[0])], axis = "index")
 
     if(self.persist):
-      destination_dir = os.path.join(self.file_path, "Datasets", "Processed", "DSADS", self.folder_name)
+      destination_dir = os.path.join(self.exp.get_dir_path("datasets"), "Processed", "DSADS", self.folder_name)
       os.makedirs(destination_dir , exist_ok = True)
 
     if(self.persist):

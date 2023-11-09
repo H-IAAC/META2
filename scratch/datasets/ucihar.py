@@ -6,6 +6,7 @@ from sklearn.manifold import TSNE
 from scratch.datasets.processing import apply_fourier_transform
 from scratch.plotting.processing_plots import create_count_histogram, plot_similarity_matrix, plot_clustering
 import configparser
+from scratch.utils.experimentmanager import ExperimentManager
 
 class UCIHARDataProcessor():
   '''
@@ -16,10 +17,9 @@ class UCIHARDataProcessor():
 
   def __init__(self, persist : bool = True, use_cfg : bool = True, config_file : str = "UCIHAR_2.56_50.cfg",
       radix_name : str = "base", frequency : float = 50.0, time_window : float = 2.56, use_test_data : bool = True,
-      drop_cols : list[str]= [],
-      normalize_cols : list[str] = [],
-      fft_cols : list[str] = []):
-
+      drop_cols : list= [],
+      normalize_cols : list = [],
+      fft_cols : list = []):
       """Constructor
 
         :param persist: if True, saves processed data as csv.
@@ -31,7 +31,7 @@ class UCIHARDataProcessor():
       """
 
       #If it is ever transformed to a python file, undo the following comments:
-
+      self.exp = ExperimentManager()
       self.file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
       self.use_cfg = use_cfg
       #And remove this line
@@ -45,7 +45,7 @@ class UCIHARDataProcessor():
         self.cfgparser.optionxform = str
         self.cfgparser.read(os.path.join(self.file_path, "Configs", "preprocessing", self.config_file))
         self.persist = self.cfgparser["file"]["persist"]
-        self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "UCIHAR")   
+        self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "UCIHAR")   
         self.folder_name = (str(self.cfgparser["file"]["radix_name"])+ "_" + self.cfgparser["base_parameters"]["time_window"] + "_" + self.cfgparser["base_parameters"]["frequency"])
         self.frequency = float(self.cfgparser["base_parameters"]["frequency"])
         self.time_window = float(self.cfgparser["base_parameters"]["time_window"])
@@ -100,21 +100,21 @@ class UCIHARDataProcessor():
     Returns:
       pd.DataFrame : processed PAMAP2 data.
     '''
-    os.makedirs(os.path.join(self.file_path, "Datasets", "Processed", "UCIHAR") , exist_ok = True)
+    os.makedirs(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "UCIHAR") , exist_ok = True)
     start_time = time.time()
     #identify already created processing parameters
     if(not self.use_cfg):
         self.cfgparser = self.get_param_cfg()
     
-    for i in os.listdir(os.path.join(self.file_path, "Datasets", "Processed", "UCIHAR")):
+    for i in os.listdir(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "UCIHAR")):
       rdparser = configparser.ConfigParser()
       rdparser.optionxform = str  
       
-      rdparser.read(os.path.join(self.file_path, "Datasets", "Processed", "UCIHAR", i, "configs.cfg"))
+      rdparser.read(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "UCIHAR", i, "configs.cfg"))
         
       if not (False in [self.cfgparser[i] == rdparser[i] for i in rdparser.sections() if i != "file"]):
           print("Found processed data according to pre-processing, copying data...")
-          total = pd.read_table(os.path.join(self.file_path, "Datasets", "Processed", "UCIHAR", i, "dataset.csv"), sep='\s+')
+          total = pd.read_table(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "UCIHAR", i, "dataset.csv"), sep='\s+')
           return total
 
     # Check whether frequency and time_window are compatible with the dataset
