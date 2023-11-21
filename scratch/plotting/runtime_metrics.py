@@ -14,6 +14,7 @@ def line_plots(exp_dict, title, path, y_label, x_label = 'Tarefa'):
     plt.savefig(path)
     with open(os.path.join(os.path.dirname(os.path.dirname(path)), 'logs', os.path.split(path)[-1][:-4] + '.json'), 'w') as json_file:
         json.dump(exp_dict, json_file)
+    plt.clf()
 
 def bar_plots(exp_dict, title, path, filename, y_label, x_label = 'Classe'):
     num_exp = len(exp_dict)
@@ -27,6 +28,7 @@ def bar_plots(exp_dict, title, path, filename, y_label, x_label = 'Classe'):
         plt.savefig(os.path.join(path, 'plots', filename + 'exp'+ str(i) + '.png'))
         with open(os.path.join(path, 'logs', filename + 'exp'+ str(i) + '.json'), 'w') as json_file:
             json.dump(exp_dict, json_file)
+        plt.clf()
 
 def save_test_stream_metrics(avalanche_metrics, sklearn_metrics, exp_dir):
 
@@ -58,16 +60,17 @@ def save_test_stream_metrics(avalanche_metrics, sklearn_metrics, exp_dir):
     #heatmap plot per exp
     confusion_mtx_per_exp = {i: sklearn_metrics.confusion_matrices[i] for i in range(len(sklearn_metrics.classifications))}
     for i in confusion_mtx_per_exp:
-        df_cm = pd.DataFrame(confusion_mtx_per_exp[i], index = [i for i in len(confusion_mtx_per_exp[i])],
-                  columns = [i for i in len(confusion_mtx_per_exp[i])])
+        df_cm = pd.DataFrame(confusion_mtx_per_exp[i], index = [i for i in range(len(confusion_mtx_per_exp[i]))],
+                  columns = [i for i in range(len(confusion_mtx_per_exp[i]))])
         plt.figure(figsize = (16,16))
         sns.heatmap(df_cm, annot=True)
-        plt.savefig(os.path.join(exp_dir, 'plots', + "confusion_mtx_task" + str(i) + ".png"))
+        plt.savefig(os.path.join(exp_dir, 'plots', "confusion_mtx_task" + str(i) + ".png"))
+        plt.clf()
 
     #save json per exp
     sklearn_metrics_per_exp = {i: sklearn_metrics.classifications[i] for i in range(len(sklearn_metrics.classifications))}
-    for i in range(len(sklearn_metrics)):
-        with open((os.path.join(exp_dir), 'logs', 'sklearn_metrics_per_exp' + str(i) + '.json'), 'w') as json_file:
+    for i in range(len(sklearn_metrics_per_exp)):
+        with open(os.path.join(exp_dir, 'logs', 'sklearn_metrics_per_exp' + str(i) + '.json'), 'w') as json_file:
             json.dump(sklearn_metrics_per_exp[i], json_file)
 
     #barplot per exp
