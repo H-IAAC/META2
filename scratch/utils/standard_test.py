@@ -22,7 +22,7 @@ if __name__ == "__main__":
     benchmark = BenchmarkFactory.generate_benchmark(scenario_cfg = "ucihar_TI.cfg", dataset_cfg = "UCIHAR_2.56_50.cfg")
     
     #Experiment setup below, changes model, strategy, replay, etc.
-    model = BaseConvolutionalModel(28, 28, 10)
+    model = BaseConvolutionalModel(9, 128, 6)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = CrossEntropyLoss()
 
