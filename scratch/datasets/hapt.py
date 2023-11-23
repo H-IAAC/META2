@@ -173,7 +173,7 @@ class HAPTDataProcessor():
       if(use_cfg):
         self.cfgparser = configparser.ConfigParser()
         self.cfgparser.optionxform = str
-        self.cfgparser.read(os.path.join(self.file_path, "Configs", "preprocessing", self.config_file))
+        self.cfgparser.read(os.path.join(self.exp.get_dir_path("configs"), "preprocessing", self.config_file))
         self.persist = self.cfgparser["file"]["persist"]
         self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "HAPT")   
         self.folder_name = (str(self.cfgparser["file"]["radix_name"])+ "_" + self.cfgparser["base_parameters"]["time_window"] + "_" + self.cfgparser["base_parameters"]["frequency"])

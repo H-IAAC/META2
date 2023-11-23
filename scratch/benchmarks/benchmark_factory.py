@@ -7,6 +7,7 @@ import os
 import configparser
 from scratch.datasets.dataset_factory import DatasetFactory
 from scratch.datasets.dataset_factory import SubjectSplit, ClassSplit
+from scratch.utils.experimentmanager import ExperimentManager
 
 class BenchmarkFactory():
   '''
@@ -27,10 +28,11 @@ class BenchmarkFactory():
 
     """
     file_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    exp = ExperimentManager()
     benchmark_parser = configparser.ConfigParser()  
     benchmark_parser.optionxform = str
-    benchmark_parser.read(os.path.join(file_path, "Configs", "TAGS", scenario_cfg))
-    benchmark_parser.read(os.path.join(file_path, "Configs", "preprocessing", dataset_cfg))
+    benchmark_parser.read(os.path.join(exp.get_dir_path("tags"), scenario_cfg))
+    benchmark_parser.read(os.path.join(exp.get_dir_path("preprocessing"), dataset_cfg))
     if(benchmark_parser["scenario_configs"]["scenario_id"] == "task_incremental"):
       return BenchmarkFactory.generate_ti_benchmark(benchmark_parser["base_parameters"]["dataset_id"],
                                                     [int(i) for i in benchmark_parser["scenario_configs"]["train_subjects"].split(',')],
