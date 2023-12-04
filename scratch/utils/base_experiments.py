@@ -4,7 +4,7 @@ file to save base experiment, to make testing easier
 import os
 
 from scratch.utils.experimentmanager import ExperimentManager
-from scratch.plotting import save_test_stream_metrics
+# from scratch.plotting import save_test_stream_metrics
 
 def run_base_experiment(benchmark, strategy, eval_plugin, sklearn_metrics_plugin):
     exp = ExperimentManager()
@@ -21,4 +21,4 @@ def run_base_experiment(benchmark, strategy, eval_plugin, sklearn_metrics_plugin
         results.append(strategy.eval(benchmark.test_stream))
 
     #Maybe change with Experiment Manager the filepath to which we're saving results
-    save_test_stream_metrics(eval_plugin.get_all_metrics(), sklearn_metrics_plugin, os.path.join(exp.get_dir_path("results"), 'WA-MDF', 'teste'))
+    # save_test_stream_metrics(eval_plugin.get_all_metrics(), sklearn_metrics_plugin, os.path.join(exp.get_dir_path("results"), 'WA-MDF', 'teste'))

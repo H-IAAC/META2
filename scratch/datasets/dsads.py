@@ -17,9 +17,9 @@ class DSADSDataProcessor():
 
   def __init__(self, persist : bool = True, use_cfg : bool = True, config_file : str = "DSADS_5_25.cfg",
       radix_name : str = "base", frequency : float = 25.0, time_window : float = 5.0, use_test_data : bool = True,
-      drop_cols : list[str]= [],
-      normalize_cols : list[str] = [],
-      fft_cols : list[str] = []):
+      drop_cols : list= [],
+      normalize_cols : list = [],
+      fft_cols : list = []):
 
       """Constructor
 

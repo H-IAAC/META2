@@ -80,7 +80,7 @@ def check_excess(subject_arr : np.ndarray, num_samples : int = 60 ) -> bool:
       return True
   return False
 
-def reshape_arrays(df_list : list[pd.DataFrame], num_samples : int = 60, num_features : int = 32) -> list[np.ndarray]:
+def reshape_arrays(df_list : list, num_samples : int = 60, num_features : int = 32) -> list:
   """
   Reshapes array so that one row of the array has num_samples samples
 
@@ -104,7 +104,7 @@ def reshape_arrays(df_list : list[pd.DataFrame], num_samples : int = 60, num_fea
     reshaped_arrays.append(subject_arr)
   return reshaped_arrays
 
-def get_inbetween_data_indices(df : pd.DataFrame, ms_to_remove : int = 10000) -> list[int]:
+def get_inbetween_data_indices(df : pd.DataFrame, ms_to_remove : int = 10000):
   """
   Removes data in-between activities (state transition)
 

@@ -14,9 +14,13 @@ class ExperimentManager:
     def __init__(self) -> None:
 
         # Set the absolute path to the main directory
-        self.__main_dir_name = "work-meta2"  # TODO change to 'work' for DL-28
+        self.__main_dir_name = "work"  # TODO change to 'work' for DL-28
         self.__main_dir_path = os.path.dirname(os.path.realpath(__file__))
+        depth = 0
         while os.path.basename(self.__main_dir_path) != self.__main_dir_name:
+            depth += 1
+            if depth == 10:
+                raise Exception("Main folder not found.")
             self.__main_dir_path = os.path.dirname(self.__main_dir_path)
 
         self.__save_exp = False  # Default values

@@ -12,13 +12,16 @@ from avalanche.logging import InteractiveLogger
 from avalanche.training.plugins import ReplayPlugin
 from avalanche.training.supervised import Naive
 
-from scratch.utils import run_base_experiment, ClassPrecisionPlugin
+from scratch.utils.base_experiments import run_base_experiment
+from scratch.utils.runtime_plugins import ClassPrecisionPlugin
 from scratch.benchmarks import BenchmarkFactory
 from scratch.strategic import CEKDLossPlugin, WAMDFPlugin, BaseConvolutionalModel
 
 if __name__ == "__main__":
 
+    print("Iniciando Experimento...")
     #Change benchmark/dataset
+    print("Preparando Benchmark...")
     benchmark = BenchmarkFactory.generate_benchmark(scenario_cfg = "ucihar_TI.cfg", dataset_cfg = "UCIHAR_2.56_50.cfg")
     
     #Experiment setup below, changes model, strategy, replay, etc.

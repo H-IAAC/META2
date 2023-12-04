@@ -147,9 +147,9 @@ class HAPTDataProcessor():
 
   def __init__(self, persist : bool = True, use_cfg : bool = True, config_file : str = "HAPT_2.56_50.cfg",
       radix_name : str = "base", frequency : float = 50.0, time_window : float = 2.56, use_test_data : bool = True,
-      drop_cols : list[str]= [],
-      normalize_cols : list[str] = [],
-      fft_cols : list[str] = []):
+      drop_cols : list= [],
+      normalize_cols : list = [],
+      fft_cols : list = []):
       """Constructor
 
         :param persist: if True, saves processed data as csv.

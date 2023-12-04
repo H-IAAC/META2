@@ -41,7 +41,7 @@ class BenchmarkFactory():
                                                     int(benchmark_parser["scenario_configs"]["classes_per_exp"]), dataset_cfg)
 
   @staticmethod
-  def generate_ti_benchmark(dataset : str, train_subjects : list[int], test_subjects : list[int], activities : list[int], 
+  def generate_ti_benchmark(dataset : str, train_subjects : list, test_subjects : list, activities : list, 
                             classes_per_exp : int, dataset_cfg : str, **kwargs) -> NCScenario:
     """
       A static function that returns a task incremental benchmark

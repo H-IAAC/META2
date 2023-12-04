@@ -77,7 +77,7 @@ class DatasetFactory():
     '''
     @staticmethod
     def get_dataset(dataset : str, config_file : str, sampler : SamplerInterface = None,
-                     activities_to_use : list[int] = [1,2,3,4,5,6,7,12,13,16,17,24], **kwargs) -> list[HARDataset]:
+                     activities_to_use : list = [1,2,3,4,5,6,7,12,13,16,17,24], **kwargs) -> list:
         """
         A static function that returns HAR Datasets based on its configuration file and dataset name.
 

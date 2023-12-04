@@ -7,7 +7,8 @@ from torch import nn
 from torch.nn import BCELoss
 
 from avalanche.core import SupervisedPlugin
-from avalanche.training.regularization import cross_entropy_with_oh_targets
+# from avalanche.training.regularization import cross_entropy_with_oh_targets
+# from avalanche.training import cross_entropy_with_oh_targets
 from avalanche.training.templates import SupervisedTemplate
 
 class CEKDLossPlugin(SupervisedPlugin):
