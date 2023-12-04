@@ -14,7 +14,7 @@ class ExperimentManager:
     def __init__(self) -> None:
 
         # Set the absolute path to the main directory
-        self.__main_dir_name = "work"  # TODO change to 'work' for DL-28
+        self.__main_dir_name = "work"  # NOTE: change to 'work' for DL-28
         self.__main_dir_path = os.path.dirname(os.path.realpath(__file__))
         depth = 0
         while os.path.basename(self.__main_dir_path) != self.__main_dir_name:
@@ -36,7 +36,7 @@ class ExperimentManager:
         self.env_parser.read(env_cfg_path)
 
         # init time
-        #self.__init_time = self.currentTime()
+        self.__init_time = self.currentTime()
 
         # Handling modifications received from the command line;
         #self.__argparser = argparse.ArgumentParser()
@@ -75,8 +75,8 @@ class ExperimentManager:
         self.__end_time = self.currentTime()
 
         # Save experiment
-        if self.__save_exp:
-            self.__save_experiment()
+        # if self.__save_exp:
+            # self.__save_experiment()
 
         # Save tag
         # if self.__args.save_tag:
