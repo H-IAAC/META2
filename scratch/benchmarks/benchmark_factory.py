@@ -66,9 +66,15 @@ class BenchmarkFactory():
 
     if 'fixed_class_order' in kwargs:
       benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], n_experiences = len(activities) // classes_per_exp, task_labels =  False, fixed_class_order = kwargs.get('fixed_class_order'))
-    elif 'per_exp_classes' in kwargs:
-      benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], n_experiences = len(activities) // classes_per_exp, task_labels =  False, per_exp_classes = kwargs.get('per_exp_classes'))
+    # shuffle = False -> para reprodutibilidade
+    elif 'per_exp_classes' in kwargs: 
+      benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], shuffle=False, n_experiences = len(activities) // classes_per_exp, task_labels =  False, per_exp_classes = kwargs.get('per_exp_classes'))
     else:
-      benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], n_experiences = len(activities) // classes_per_exp, task_labels =  False)
+      if len(activities) % classes_per_exp == 0:
+        benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], shuffle=False, n_experiences = len(activities) // classes_per_exp, task_labels =  False)
+      else:
+        first_exp_class = {((len(activities) + 1) // classes_per_exp) - 1: len(activities) % classes_per_exp}
+        benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], shuffle=False, n_experiences = (len(activities) + 1) // classes_per_exp, task_labels =  False, per_exp_classes=first_exp_class)
+
 
     return benchmark
