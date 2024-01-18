@@ -26,15 +26,16 @@ if __name__ == "__main__":
     exp.read_experiment(os.path.join(
         exp.get_dir_path("experiments"), "default.cfg"))
 
+    # used to debug
     exp.print_attributes('exp_parser')
 
     # Change benchmark/dataset
     scenario_cfg = exp.exp_parser.get("benchmark", "scenario_cfg")
     dataset_cfg = exp.exp_parser.get("benchmark", "dataset_cfg")
     benchmark = BenchmarkFactory.generate_benchmark(scenario_cfg, dataset_cfg)
-    print(benchmark.n_classes)
 
     # Experiment setup below, changes model, strategy, replay, etc.
+
     # TODO: Instanciar modelo, otimizador e critério utilizando cfg
     if exp.exp_parser.get("benchmark", "name") == "UCIHAR_TI":
         model = FullyConnectedNetwork(input_shape=(1, 128, 9),
@@ -54,7 +55,6 @@ if __name__ == "__main__":
                                       hidden_layer_dimensions=[1122, 561, 280],
                                       num_classes=12)
 
-
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = CrossEntropyLoss()
 
@@ -73,8 +73,11 @@ if __name__ == "__main__":
     # TODO: Instanciar estratégia utilizando cfg
     strategy = Naive(
         model, optimizer, loss_plugin,
-        evaluator=eval_plugin, plugins=[sklearn_metrics_plugin, loss_plugin] + avl_plugins, train_mb_size=32, eval_mb_size=128, train_epochs=6)
-
+        evaluator=eval_plugin, plugins=[
+            sklearn_metrics_plugin, loss_plugin] + avl_plugins,
+        train_mb_size=32, eval_mb_size=128,
+        train_epochs=exp.exp_parser.getint('training', 'epochs'))
+    
     # Here's how you run the experiment
     run_base_experiment(benchmark, strategy, eval_plugin,
                         sklearn_metrics_plugin)

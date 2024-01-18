@@ -40,8 +40,14 @@ class ExperimentManager:
         self._argparser = argparse.ArgumentParser()
         self._argparser.add_argument('-s', '--strategy')
         self._argparser.add_argument('-b', '--benchmark')
+        self._argparser.add_argument('--training_epochs')
+        self._argparser.add_argument('--save', type=bool, default=True)
 
         self._args = self._argparser.parse_args()
+
+        self.save_experiment = False  # TODO: turn into a property
+        if self._args.save:
+            self.save_experiment = True
 
     def __new__(cls):
         '''
@@ -72,6 +78,11 @@ class ExperimentManager:
             self._read_strategy_from_file(
                 self.exp_parser.get('experiment', 'strategy'))
 
+        # changes the number of epochs if specified on the command line.
+        if self._args.training_epochs:
+            self.exp_parser.set('training', 'epochs',
+                                self._args.training_epochs)
+
         # reads benchmark from experiment config file or from argument line command
         if self._args.benchmark:
             self._read_benchmark_from_file(self._args.benchmark)
@@ -80,7 +91,8 @@ class ExperimentManager:
                 self.exp_parser.get('experiment', 'benchmark'))
 
         # create folders to save experiment info
-        self._init_exp_folder()
+        if self._args.save:
+            self._init_exp_folder()
 
         return
 
