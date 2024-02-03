@@ -72,11 +72,16 @@ class ExperimentManager:
         self.exp_parser.read(cfg_path)
 
         # reads strategy from experiment config file or from argument line command
+
+        #commenting line to adequate to designed architecture
+        '''
         if self._args.strategy:
             self._read_strategy_from_file(self._args.strategy)
         else:
             self._read_strategy_from_file(
                 self.exp_parser.get('experiment', 'strategy'))
+        '''
+                
 
         # changes the number of epochs if specified on the command line.
         if self._args.training_epochs:
@@ -84,11 +89,15 @@ class ExperimentManager:
                                 self._args.training_epochs)
 
         # reads benchmark from experiment config file or from argument line command
+            
+        #commenting line to adequate to designed architecture
+        '''
         if self._args.benchmark:
             self._read_benchmark_from_file(self._args.benchmark)
         else:
             self._read_benchmark_from_file(
                 self.exp_parser.get('experiment', 'benchmark'))
+        '''
 
         # create folders to save experiment info
         if self._args.save:
