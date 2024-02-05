@@ -78,3 +78,28 @@ class ClassSplit(SamplerInterface):
         dfs.append(df.iloc[indices])
 
       return dfs
+    
+class RandomSubjectSplit(SubjectSplit):
+
+    def __init__(self, train_split):
+      super().__init__([])
+      self.train_split = train_split
+
+    def split(self, df):
+      n_subjects = np.unique(df["subjectID"].to_numpy()).shape[0]
+      
+
+      n_train_subjects = int(round(n_subjects * self.train_split))
+      
+
+      subjects = np.unique(df["subjectID"].to_numpy())
+      np.random.shuffle(subjects)
+      randomized_subjects = list(subjects)
+      train_subjects = randomized_subjects[:n_train_subjects]
+      test_subjects = randomized_subjects[n_train_subjects:]
+
+      self.split_sequence = [train_subjects, test_subjects]
+
+      return super().split(df)
+
+
