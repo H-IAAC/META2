@@ -17,6 +17,7 @@ from scratch.strategic import CEKDLossPlugin, FullyConnectedNetwork
 
 from scratch.utils.experimentmanager import ExperimentManager
 import os
+import json
 
 from scratch.strategic.strategic_factory import StrategicFactory
 
@@ -55,7 +56,7 @@ if __name__ == "__main__":
                                       hidden_layer_dimensions=[1122, 561, 280],
                                       num_classes=12)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=exp.exp_parser.getfloat('training', 'learning_rate'), weight_decay=exp.exp_parser.getfloat('training', 'weight_decay'))
     criterion = CrossEntropyLoss()
 
     sklearn_metrics_plugin = ClassPrecisionPlugin(6)
@@ -75,11 +76,12 @@ if __name__ == "__main__":
         model, optimizer, loss_plugin,
         evaluator=eval_plugin, plugins=[
             sklearn_metrics_plugin, loss_plugin] + avl_plugins,
-        train_mb_size=32, eval_mb_size=128,
+        train_mb_size = exp.exp_parser.getint('training', 'batch_size'), eval_mb_size=exp.exp_parser.getint('training', 'batch_size'),
         train_epochs=exp.exp_parser.getint('training', 'epochs'))
     
     # Here's how you run the experiment
-    run_base_experiment(benchmark, strategy, eval_plugin,
+    result_dict = run_base_experiment(benchmark, strategy, eval_plugin,
                         sklearn_metrics_plugin)
 
+    
     # Do not forget eval_plugin and sklearn_metrics_plugin

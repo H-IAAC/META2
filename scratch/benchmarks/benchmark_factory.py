@@ -33,6 +33,7 @@ class BenchmarkFactory():
     benchmark_parser.optionxform = str
     benchmark_parser.read(os.path.join(exp.get_dir_path("scenario"), scenario_cfg))
     benchmark_parser.read(os.path.join(exp.get_dir_path("preprocessing"), dataset_cfg))
+    
     if(benchmark_parser["scenario_configs"]["scenario_id"] == "task_incremental"):
       return BenchmarkFactory.generate_ti_benchmark(benchmark_parser["base_parameters"]["dataset_id"],
                                                     benchmark_parser.getboolean("scenario_configs", "use_subject_fraction_to_split"), 
@@ -40,11 +41,11 @@ class BenchmarkFactory():
                                                     [int(i) for i in benchmark_parser["scenario_configs"]["train_subjects"].split(',')],
                                                     [int(i) for i in benchmark_parser["scenario_configs"]["test_subjects"].split(',')],
                                                     [int(i) for i in benchmark_parser["scenario_configs"]["activities_to_use"].split(',')],
-                                                    int(benchmark_parser["scenario_configs"]["classes_per_exp"]), dataset_cfg)
+                                                    int(benchmark_parser["scenario_configs"]["classes_per_exp"]), dataset_cfg, exp)
 
   @staticmethod
   def generate_ti_benchmark(dataset : str, use_fraction : bool, train_fraction : float, train_subjects : list, test_subjects : list, activities : list, 
-                            classes_per_exp : int, dataset_cfg : str, **kwargs) -> NCScenario:
+                            classes_per_exp : int, dataset_cfg : str, exp : ExperimentManager, **kwargs) -> NCScenario:
     """
       A static function that returns a task incremental benchmark
 
@@ -66,7 +67,6 @@ class BenchmarkFactory():
       split_list.append(test_subjects)
       split_dataset = DatasetFactory.get_dataset(dataset, config_file = dataset_cfg, sampler = SubjectSplit(split_list), activities_to_use = activities)
     else:
-      print("kinda worked")
       split_dataset = DatasetFactory.get_dataset(dataset, config_file = dataset_cfg, sampler = RandomSubjectSplit(train_fraction), activities_to_use = activities)
 
     if 'fixed_class_order' in kwargs:
@@ -81,5 +81,7 @@ class BenchmarkFactory():
         first_exp_class = {((len(activities) + 1) // classes_per_exp) - 1: len(activities) % classes_per_exp}
         benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], shuffle=False, n_experiences = (len(activities) + 1) // classes_per_exp, task_labels =  False, per_exp_classes=first_exp_class)
 
-
+    exp.set_scenario_params({"scenario_id": "task_incremental", "activities": activities, "classes_per_experience": classes_per_exp})
+    exp.set_dataset_params(dataset_cfg)
+    
     return benchmark

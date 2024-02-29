@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import abc
+from scratch.utils.experimentmanager import ExperimentManager
 
 class SamplerInterface(abc.ABC):
     
@@ -13,6 +14,7 @@ class SamplerInterface(abc.ABC):
 
 
 class SubjectSplit(SamplerInterface):
+    
     '''
     Data spliting class. Splits the dataset based on an subject sequence.
     '''
@@ -43,6 +45,10 @@ class SubjectSplit(SamplerInterface):
           if i in split:
             indices.append(idx)
         dfs.append(df.iloc[indices])
+      
+      exp = ExperimentManager()
+      
+      exp.set_scenario_params({"train_subjects": self.split_sequence[0], "test_subjects": self.split_sequence[1]})
 
       return dfs
     

@@ -40,7 +40,10 @@ class ExperimentManager:
         self._argparser = argparse.ArgumentParser()
         self._argparser.add_argument('-s', '--strategy')
         self._argparser.add_argument('-b', '--benchmark')
-        self._argparser.add_argument('--training_epochs')
+        self._argparser.add_argument('--training_epochs', type=int, default=6)
+        self._argparser.add_argument('--batch_size', type=int, default=32)
+        self._argparser.add_argument('--weight_decay', type=float, default=1e-4)
+        self._argparser.add_argument('--learning_rate', type=float, default=1e-3)
         self._argparser.add_argument('--save', type=bool, default=True)
 
         self._args = self._argparser.parse_args()
@@ -70,7 +73,7 @@ class ExperimentManager:
 
         self.exp_parser = configparser.ConfigParser()
         self.exp_parser.read(cfg_path)
-
+    
         # reads strategy from experiment config file or from argument line command
 
         #commenting line to adequate to designed architecture
@@ -84,10 +87,26 @@ class ExperimentManager:
                 
 
         # changes the number of epochs if specified on the command line.
+        if not self.exp_parser.has_section('training'):
+            self.exp_parser.add_section('training')
+
         if self._args.training_epochs:
             self.exp_parser.set('training', 'epochs',
-                                self._args.training_epochs)
-
+                                str(self._args.training_epochs))
+            
+        if self._args.batch_size:
+            self.exp_parser.set('training', 'batch_size',
+                                str(self._args.batch_size))
+            
+        if self._args.weight_decay:
+            self.exp_parser.set('training', 'weight_decay',
+                                str(self._args.weight_decay))
+            
+        if self._args.learning_rate:
+            self.exp_parser.set('training', 'learning_rate',
+                                str(self._args.learning_rate))
+            
+        
         # reads benchmark from experiment config file or from argument line command
             
         #commenting line to adequate to designed architecture
@@ -151,6 +170,33 @@ class ExperimentManager:
         # cfg_path = os.path.join(results_path, self.getstr("exp_settings_file"))
         # with open(cfg_path, 'w') as cfgfile:
         #         self.__tag.write(cfgfile)
+
+    def set_scenario_params(self, param_dict):
+        if not self.exp_parser.has_section('scenario_configs'):
+            self.exp_parser.add_section('scenario_configs')
+
+        for i in param_dict:
+            self.exp_parser.set(section='scenario_configs', option=i,
+                            value= str(param_dict[i]))
+            
+    def set_dataset_params(self, dataset_cfg):
+        if not self.exp_parser.has_section('dataset_configs'):
+            self.exp_parser.add_section('dataset_configs')
+
+        cfgparser = self.new_parser("pamap_parser")
+        cfgparser.optionxform = str
+        
+        cfgparser.read(os.path.join(self.get_dir_path("preprocessing"), dataset_cfg))
+        
+        #base parameterss
+        for i in cfgparser['base_parameters']:
+            self.exp_parser.set(section='dataset_configs', option=i,
+                            value= str(cfgparser['base_parameters'][i]))
+       
+       #use columns
+        self.exp_parser.set(section='dataset_configs', option='used_sensors',
+                        value= str([i for i in cfgparser['use_cols'] if cfgparser['use_cols'].getboolean(i)]))
+
 
     @property
     def exp_folder(self):
@@ -244,6 +290,7 @@ class ExperimentManager:
             plugins = []
 
         return plugins
+    
 
     @property
     def main_dir_path(self):
