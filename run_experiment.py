@@ -9,9 +9,9 @@ from avalanche.evaluation.metrics import accuracy_metrics, loss_metrics, forgett
 from avalanche.logging import InteractiveLogger
 from avalanche.training.plugins import ReplayPlugin
 from avalanche.training.supervised import Naive
-
+from avalanche.training.plugins import EarlyStoppingPlugin
 from scratch.utils.base_experiments import run_base_experiment
-from scratch.utils.runtime_plugins import ClassPrecisionPlugin
+from scratch.utils.runtime_plugins import ClassPrecisionPlugin, TrainEarlyStoppingPlugin
 from scratch.benchmarks import BenchmarkFactory
 from scratch.strategic import CEKDLossPlugin, FullyConnectedNetwork
 
@@ -61,6 +61,7 @@ if __name__ == "__main__":
 
     sklearn_metrics_plugin = ClassPrecisionPlugin(6)
     loss_plugin = CEKDLossPlugin()
+    es_plugin = TrainEarlyStoppingPlugin(2, 0.01)
 
     avl_plugins = StrategicFactory.init_plugins(exp.get_plugins_list())
 
@@ -71,13 +72,15 @@ if __name__ == "__main__":
         forgetting_metrics(experience=True, stream=True),
         loggers=[InteractiveLogger()])
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
     # TODO: Instanciar estratégia utilizando cfg
     strategy = Naive(
         model, optimizer, loss_plugin,
         evaluator=eval_plugin, plugins=[
-            sklearn_metrics_plugin, loss_plugin] + avl_plugins,
+            sklearn_metrics_plugin, loss_plugin, es_plugin] + avl_plugins,
         train_mb_size = exp.exp_parser.getint('training', 'batch_size'), eval_mb_size=exp.exp_parser.getint('training', 'batch_size'),
-        train_epochs=exp.exp_parser.getint('training', 'epochs'))
+        train_epochs=exp.exp_parser.getint('training', 'epochs'), device=device)
     
     # Here's how you run the experiment
     result_dict = run_base_experiment(benchmark, strategy, eval_plugin,

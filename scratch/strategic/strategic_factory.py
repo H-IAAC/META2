@@ -8,6 +8,7 @@ class StrategicFactory():
 
         # Inicia os plugins especificados em exp_parser
         p = []
+        
         if "wamdf" in plugins:
             from . import WAMDFPlugin
             p.append(WAMDFPlugin())
@@ -16,6 +17,6 @@ class StrategicFactory():
             p.append(WAADBPlugin())
         if "replay" in plugins:
             from avalanche.training.plugins import ReplayPlugin
-            p.append(ReplayPlugin(mem_size=48)) # TODO: Resolver isso, colocar opção de instanciar automaticamente
+            p.append(ReplayPlugin(mem_size= 12 * 16)) # TODO: Resolver isso, colocar opção de instanciar automaticamente
         
         return p

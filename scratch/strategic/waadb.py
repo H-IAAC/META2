@@ -1,4 +1,5 @@
 from avalanche.core import SupervisedPlugin
+from avalanche.training.templates import SupervisedTemplate
 from collections import defaultdict
 import torch
 

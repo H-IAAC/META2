@@ -4,6 +4,7 @@ from avalanche.benchmarks.scenarios.new_classes.nc_scenario import NCScenario
 import pandas as pd
 import numpy as np
 import os
+import torch
 import configparser
 from scratch.datasets.dataset_factory import DatasetFactory
 from scratch.benchmarks.split import SubjectSplit, ClassSplit, RandomSubjectSplit
@@ -68,7 +69,8 @@ class BenchmarkFactory():
       split_dataset = DatasetFactory.get_dataset(dataset, config_file = dataset_cfg, sampler = SubjectSplit(split_list), activities_to_use = activities)
     else:
       split_dataset = DatasetFactory.get_dataset(dataset, config_file = dataset_cfg, sampler = RandomSubjectSplit(train_fraction), activities_to_use = activities)
-
+    
+    
     if 'fixed_class_order' in kwargs:
       benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], n_experiences = len(activities) // classes_per_exp, task_labels =  False, fixed_class_order = kwargs.get('fixed_class_order'))
     # shuffle = False -> para reprodutibilidade

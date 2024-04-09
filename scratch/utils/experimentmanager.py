@@ -14,7 +14,7 @@ class ExperimentManager:
     def __init__(self) -> None:
 
         # Set the absolute path to the main directory
-        self._main_dir_name = "Meta2"  # NOTE: change to 'work' for DL-28
+        self._main_dir_name = "work"  # NOTE: change to 'work' for DL-28
         self._main_dir_path = os.path.dirname(os.path.realpath(__file__))
         depth = 0
         while os.path.basename(self._main_dir_path) != self._main_dir_name:
@@ -41,9 +41,11 @@ class ExperimentManager:
         self._argparser.add_argument('-s', '--strategy')
         self._argparser.add_argument('-b', '--benchmark')
         self._argparser.add_argument('--training_epochs', type=int, default=6)
+        
         self._argparser.add_argument('--batch_size', type=int, default=32)
         self._argparser.add_argument('--weight_decay', type=float, default=1e-4)
         self._argparser.add_argument('--learning_rate', type=float, default=1e-3)
+        self._argparser.add_argument('--plasticity_factor', type=float, default=0.9)
         self._argparser.add_argument('--save', type=bool, default=True)
 
         self._args = self._argparser.parse_args()
@@ -94,6 +96,10 @@ class ExperimentManager:
             self.exp_parser.set('training', 'epochs',
                                 str(self._args.training_epochs))
             
+        if self._args.training_epochs:
+            self.exp_parser.set('training', 'plasticity_factor',
+                                str(self._args.plasticity_factor))
+
         if self._args.batch_size:
             self.exp_parser.set('training', 'batch_size',
                                 str(self._args.batch_size))
