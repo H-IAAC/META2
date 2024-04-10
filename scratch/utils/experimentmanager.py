@@ -45,7 +45,8 @@ class ExperimentManager:
         self._argparser.add_argument('--batch_size', type=int, default=32)
         self._argparser.add_argument('--weight_decay', type=float, default=1e-4)
         self._argparser.add_argument('--learning_rate', type=float, default=1e-3)
-        self._argparser.add_argument('--plasticity_factor', type=float, default=0.9)
+        self._argparser.add_argument('--plasticity_factor', type=float, default=1.0)
+        self._argparser.add_argument('--experiment_file', type=str, default='default.cfg')
         self._argparser.add_argument('--save', type=bool, default=True)
 
         self._args = self._argparser.parse_args()
@@ -53,6 +54,10 @@ class ExperimentManager:
         self.save_experiment = False  # TODO: turn into a property
         if self._args.save:
             self.save_experiment = True
+
+        if self._args.experiment_file:
+            self.env_parser.set('results', 'experiment_file',
+                                str(self._args.experiment_file))
 
     def __new__(cls):
         '''
@@ -96,7 +101,7 @@ class ExperimentManager:
             self.exp_parser.set('training', 'epochs',
                                 str(self._args.training_epochs))
             
-        if self._args.training_epochs:
+        if self._args.plasticity_factor:
             self.exp_parser.set('training', 'plasticity_factor',
                                 str(self._args.plasticity_factor))
 

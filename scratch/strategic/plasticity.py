@@ -7,7 +7,7 @@ from avalanche.training.plugins.evaluation import default_evaluator
 from avalanche.training.plugins import SupervisedPlugin, EvaluationPlugin
 
 from avalanche.training.templates.base import BaseTemplate
-from avalanche.training.templates.supervised import SupervisedTemplate
+from avalanche.training.templates import SupervisedTemplate
 from avalanche.logging import InteractiveLogger
 
 from collections import defaultdict
@@ -50,17 +50,18 @@ class PlasticityStrategy(SupervisedTemplate):
     def make_optimizer(self, **kwargs):
         
         lr_base = self.optimizer.param_groups[0]['lr']
-        
+        '''
+        deprecated
         sum_params = sum([i.numel() for i in self.model.parameters()])
+        '''
         
-        sum_weighted_params = 0
         factor = 0
         for j in list(self.model.parameters())[::-1]:
-            sum_weighted_params += j.numel() * (self.plasticity_factor ** factor)
             if len(j.shape) > 1:
                 factor += 1
-        
-        lr_adapted = lr_base * sum_params / sum_weighted_params
+        num_layers = factor + 1
+
+        lr_adapted = lr_base * num_layers * ( ( 1 - self.plasticity_factor ) / ( 1 - (self.plasticity_factor ** num_layers)) )
         factor = 0
         lrs = []
         for j in list(self.model.parameters())[::-1]:

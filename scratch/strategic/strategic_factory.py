@@ -4,11 +4,11 @@ class StrategicFactory():
     '''
 
     @staticmethod
-    def init_plugins(plugins: list):
+    def init_plugins(plugins: list, name : str):
 
         # Inicia os plugins especificados em exp_parser
         p = []
-        
+        mem_size = 12 * 16
         if "wamdf" in plugins:
             from . import WAMDFPlugin
             p.append(WAMDFPlugin())
@@ -17,6 +17,14 @@ class StrategicFactory():
             p.append(WAADBPlugin())
         if "replay" in plugins:
             from avalanche.training.plugins import ReplayPlugin
-            p.append(ReplayPlugin(mem_size= 12 * 16)) # TODO: Resolver isso, colocar opção de instanciar automaticamente
+            if name == "UCIHAR_TI":
+                mem_size = 4 * 12
+            if name == "PAMAP_TI":
+                mem_size = 10 * 12
+            if name == "DSADS_TI":
+                mem_size = 16 * 12
+            if name == "HAPT_TI":
+                mem_size = 10 * 12
+            p.append(ReplayPlugin(mem_size = mem_size)) # TODO: Resolver isso, colocar opção de instanciar automaticamente
         
         return p
