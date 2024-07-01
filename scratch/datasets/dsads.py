@@ -80,7 +80,7 @@ class DSADSDataProcessor():
         self.use_cols = [i for i in self.namecols if i not in self.drop_cols]
         self.processing_time = 0.0
 
-  def get_param_cfg(self) -> configparser.ConfigParser():
+  def get_param_cfg(self) -> configparser.ConfigParser:
     """
     Gets class parameters as ConfigParser
 

@@ -22,6 +22,14 @@ class ExperimentManager:
             if depth == 10:
                 raise Exception("Main folder not found.")
             self._main_dir_path = os.path.dirname(self._main_dir_path)
+        self._main_dir_name = "work"  # NOTE: change to 'work' for DL-28
+        self._main_dir_path = os.path.dirname(os.path.realpath(__file__))
+        depth = 0
+        while os.path.basename(self._main_dir_path) != self._main_dir_name:
+            depth += 1
+            if depth == 10:
+                raise Exception("Main folder not found.")
+            self._main_dir_path = os.path.dirname(self._main_dir_path)
 
         # Creates an environment parser and read the config file
         env_cfg_path = os.path.join(
@@ -194,7 +202,7 @@ class ExperimentManager:
         if not self.exp_parser.has_section('dataset_configs'):
             self.exp_parser.add_section('dataset_configs')
 
-        cfgparser = self.new_parser("pamap_parser")
+        cfgparser = self.new_parser("placeholder_parser")
         cfgparser.optionxform = str
         
         cfgparser.read(os.path.join(self.get_dir_path("preprocessing"), dataset_cfg))

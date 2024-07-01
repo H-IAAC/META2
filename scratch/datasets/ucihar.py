@@ -7,6 +7,7 @@ from scratch.datasets.processing import apply_fourier_transform
 from scratch.plotting.processing_plots import create_count_histogram, plot_similarity_matrix, plot_clustering
 import configparser
 from scratch.utils.experimentmanager import ExperimentManager
+import abc
 
 class UCIHARDataProcessor():
   '''
@@ -70,7 +71,7 @@ class UCIHARDataProcessor():
         self.use_cols = [i for i in self.namecols if i not in self.drop_cols]
         self.processing_time = 0.0
 
-  def get_param_cfg(self) -> configparser.ConfigParser():
+  def get_param_cfg(self) -> configparser.ConfigParser:
     """
     Gets class parameters as ConfigParser
 

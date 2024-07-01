@@ -18,13 +18,13 @@ class StrategicFactory():
         if "replay" in plugins:
             from avalanche.training.plugins import ReplayPlugin
             if name == "UCIHAR_TI":
-                mem_size = 4 * 12
+                mem_size = 4 * 6
             if name == "PAMAP_TI":
-                mem_size = 10 * 12
+                mem_size = 10 * 6
             if name == "DSADS_TI":
-                mem_size = 16 * 12
+                mem_size = 16 * 6
             if name == "HAPT_TI":
-                mem_size = 10 * 12
+                mem_size = 10 * 6
             p.append(ReplayPlugin(mem_size = mem_size)) # TODO: Resolver isso, colocar opção de instanciar automaticamente
         
         return p

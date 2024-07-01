@@ -47,8 +47,8 @@ class SubjectSplit(SamplerInterface):
         dfs.append(df.iloc[indices])
       
       exp = ExperimentManager()
-      
-      exp.set_scenario_params({"train_subjects": self.split_sequence[0], "test_subjects": self.split_sequence[1]})
+      if hasattr(exp, 'exp_parser'):
+        exp.set_scenario_params({"train_subjects": self.split_sequence[0], "test_subjects": self.split_sequence[1]})
 
       return dfs
     

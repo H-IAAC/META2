@@ -13,7 +13,7 @@ from avalanche.training.plugins import EarlyStoppingPlugin
 from scratch.utils.base_experiments import run_base_experiment
 from scratch.utils.runtime_plugins import ClassPrecisionPlugin, TrainEarlyStoppingPlugin
 from scratch.benchmarks import BenchmarkFactory
-from scratch.strategic import CEKDLossPlugin, FullyConnectedNetwork
+from scratch.strategic import CEKDLossPlugin, FullyConnectedNetwork, Microtransformer
 from scratch.strategic import PlasticityStrategy
 from scratch.utils.experimentmanager import ExperimentManager
 import os
@@ -44,9 +44,8 @@ if __name__ == "__main__":
                                       num_classes=6)
         num_classes = 6
     if exp.exp_parser.get("benchmark", "name") == "PAMAP_TI":
-        model = FullyConnectedNetwork(input_shape=(1, 104, 31),
-                                      hidden_layer_dimensions=[486, 243, 121],
-                                      num_classes=12)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = Microtransformer(31, 104, 12, 6, 0.2, device)
         num_classes=12
     if exp.exp_parser.get("benchmark", "name") == "DSADS_TI":
         model = FullyConnectedNetwork(input_shape=(1, 125, 45),

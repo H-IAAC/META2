@@ -1,6 +1,6 @@
 import avalanche as avl
-from avalanche.benchmarks.scenarios.classification_scenario import GenericCLScenario
-from avalanche.benchmarks.scenarios.new_classes.nc_scenario import NCScenario
+from avalanche.benchmarks.scenarios.generic_scenario import CLScenario
+from avalanche.benchmarks.scenarios import NCScenario
 import pandas as pd
 import numpy as np
 import os
@@ -16,7 +16,7 @@ class BenchmarkFactory():
 
   '''
   @staticmethod
-  def generate_benchmark(scenario_cfg : str, dataset_cfg : str) -> GenericCLScenario:
+  def generate_benchmark(scenario_cfg : str, dataset_cfg : str) -> CLScenario:
     """
       A static function that returns benchmarks according to parameters in scenario_cfg and dataset_cfg
 

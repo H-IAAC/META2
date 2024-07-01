@@ -50,8 +50,9 @@ class HARDataset(Dataset):
         self.data = self.data.reindex(columns = correct_order)
         self.data = self.data.to_numpy()
         self.data = np.reshape(self.data, (self.data.shape[0], self.grouped_samples, self.data.shape[1] // self.grouped_samples))
-        self.data = np.expand_dims(self.data, 1)
+        
         self.tensors = torch.from_numpy(self.data).type(torch.float32)
+        
         self.targets = torch.from_numpy(self.target).type(torch.int32)
         print("features shape:" , self.data.shape)
 
