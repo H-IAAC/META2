@@ -14,7 +14,7 @@ class ExperimentManager:
     def __init__(self) -> None:
 
         # Set the absolute path to the main directory
-        self._main_dir_name = "work"  # NOTE: change to 'work' for DL-28
+        self._main_dir_name = "meta2"  # NOTE: change to 'work' for DL-28
         self._main_dir_path = os.path.dirname(os.path.realpath(__file__))
         depth = 0
         while os.path.basename(self._main_dir_path) != self._main_dir_name:
@@ -22,7 +22,7 @@ class ExperimentManager:
             if depth == 10:
                 raise Exception("Main folder not found.")
             self._main_dir_path = os.path.dirname(self._main_dir_path)
-        self._main_dir_name = "work"  # NOTE: change to 'work' for DL-28
+        self._main_dir_name = "meta2"  # NOTE: change to 'work' for DL-28
         self._main_dir_path = os.path.dirname(os.path.realpath(__file__))
         depth = 0
         while os.path.basename(self._main_dir_path) != self._main_dir_name:
@@ -76,7 +76,8 @@ class ExperimentManager:
         return cls._instance
 
     def currentTime(self) -> str:
-        return str(datetime.now())[:-7]  # Ignore miliseconds
+        
+        return datetime.now().strftime("%Y%m%d_%H%M%S")# Ignore miliseconds
 
     def read_experiment(self, cfg_path: str) -> None:
         '''

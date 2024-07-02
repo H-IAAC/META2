@@ -33,7 +33,7 @@ class CEKDLossPlugin(SupervisedPlugin):
         self.lbda = 0
 
     def before_training_exp(self, strategy:SupervisedTemplate, *args, **kwargs):
-      self.new_classes = strategy.experience.classes_in_this_experience
+      self.new_classes = list(strategy.experience.classes_in_this_experience)
       self.lbda = len(self.old_classes) / len(self.old_classes + self.new_classes)
       return super().before_training_exp(strategy, *args, **kwargs)
 

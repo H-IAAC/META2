@@ -41,15 +41,14 @@ def save_test_stream_metrics(avalanche_metrics, sklearn_metrics, exp_dir):
     result_dict = dict()
     print("Saving test stream metrics...")
     os.makedirs(os.path.join(exp_dir, 'plots'), exist_ok=True)
-    
     # line plots
-    acc_per_exp = {i: avalanche_metrics['Top1_Acc_Stream/eval_phase/test_stream/Task000'][1][i]
-                   for i in range(len(sklearn_metrics.classifications))}
+    acc_per_exp = {i: sklearn_metrics.classifications[i]['accuracy']
+                        for i in range(len(sklearn_metrics.classifications))}
     result_dict['Accuracy de teste por tarefa'] = list(acc_per_exp.values())
     line_plots(acc_per_exp, "Acurácia de teste por tarefa",
                os.path.join(exp_dir, 'plots', 'acc_per_exp.png'), "Acurácia", y_range=(0, 1.05))
 
-    loss_per_exp = {i: avalanche_metrics['Loss_Stream/eval_phase/test_stream/Task000'][1][i]
+    loss_per_exp = {i: avalanche_metrics['Loss_Stream/eval_phase/test_stream'][1][i]
                     for i in range(len(sklearn_metrics.classifications))}
     result_dict['Loss de teste por tarefa'] = list(loss_per_exp.values())
     line_plots(loss_per_exp, "Loss de teste por tarefa",

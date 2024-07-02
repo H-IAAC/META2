@@ -13,9 +13,11 @@ class WAMDFPlugin(SupervisedPlugin):
       self.old_classes = self.old_classes + self.current_classes
       self.current_classes = new_classes
 
+    def before_training_exp(self, strategy: "SupervisedTemplate", *args, **kwargs) :
+       self.update_classes(list(strategy.experience.classes_in_this_experience))
+       return super().before_training_epoch(strategy, *args, **kwargs)
+
     def before_forward(self, strategy: "SupervisedTemplate", **kwargs):
-        # quero mandar classes da experiencia
-        self.update_classes(strategy.experience.classes_in_this_experience)
 
         with torch.no_grad():
           #Set bias to zero

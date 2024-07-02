@@ -70,18 +70,17 @@ class BenchmarkFactory():
     else:
       split_dataset = DatasetFactory.get_dataset(dataset, config_file = dataset_cfg, sampler = RandomSubjectSplit(train_fraction), activities_to_use = activities)
     
-    
     if 'fixed_class_order' in kwargs:
-      benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], n_experiences = len(activities) // classes_per_exp, task_labels =  False, fixed_class_order = kwargs.get('fixed_class_order'))
+      avl.benchmarks.scenarios.supervised.class_incremental_benchmark({'train': split_dataset[0], 'test': split_dataset[1]}, num_experiences = len(activities) // classes_per_exp, class_order= kwargs.get('fixed_class_order'))
     # shuffle = False -> para reprodutibilidade
     elif 'per_exp_classes' in kwargs: 
-      benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], shuffle=False, n_experiences = len(activities) // classes_per_exp, task_labels =  False, per_exp_classes = kwargs.get('per_exp_classes'))
+      benchmark = avl.benchmarks.scenarios.supervised.class_incremental_benchmark({'train': split_dataset[0], 'test': split_dataset[1]}, num_experiences = len(activities) // classes_per_exp, class_order= kwargs.get('per_exp_classes'))
     else:
       if len(activities) % classes_per_exp == 0:
-        benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], shuffle=False, n_experiences = len(activities) // classes_per_exp, task_labels =  False)
+        benchmark = avl.benchmarks.scenarios.supervised.class_incremental_benchmark({'train': split_dataset[0], 'test': split_dataset[1]}, num_experiences = len(activities) // classes_per_exp)
       else:
-        first_exp_class = {((len(activities) + 1) // classes_per_exp) - 1: len(activities) % classes_per_exp}
-        benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], shuffle=False, n_experiences = (len(activities) + 1) // classes_per_exp, task_labels =  False, per_exp_classes=first_exp_class)
+        first_exp_class = {((len(activities) + 1) // classes_per_exp) - 1: len(activities) % classes_per_exp} #doesnt seem to work
+        benchmark = avl.benchmarks.generators.nc_benchmark(train_dataset = split_dataset[0], test_dataset = split_dataset[1], shuffle=False, n_experiences = (len(activities) + 1) // classes_per_exp, class_order=list(first_exp_class.values()))
 
     exp.set_scenario_params({"scenario_id": "task_incremental", "activities": activities, "classes_per_experience": classes_per_exp})
     exp.set_dataset_params(dataset_cfg)

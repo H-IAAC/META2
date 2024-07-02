@@ -8,7 +8,14 @@ import warnings
 from copy import deepcopy
 from avalanche.training.plugins import SupervisedPlugin
 
-
+def map_to_arange(tensor, value_to_arange):
+    
+    # Create the output tensor by mapping original values to their corresponding arange values
+    mapped_tensor = tensor.clone()
+    for value, arange_value in value_to_arange.items():
+        mapped_tensor[tensor == value] = arange_value
+    
+    return mapped_tensor
 
 
 class ClassPrecisionPlugin(SupervisedPlugin):
@@ -23,14 +30,19 @@ class ClassPrecisionPlugin(SupervisedPlugin):
         self.predictions = torch.empty((0), dtype=torch.int64).to(self.device)
         self.true = torch.empty((0), dtype=torch.int64).to(self.device)
 
+        self.classes_yet = []
         self.num_classes = num_classes
         self.mistakes = np.zeros((num_classes))
         self.total = np.zeros((num_classes))
         self.history = []
 
+    def before_training_exp(self, strategy: "SupervisedTemplate", *args, **kwargs):
+        self.classes_yet = self.classes_yet + list(strategy.experience.classes_in_this_experience)
+        return super().before_backward(strategy, *args, **kwargs)
+
     def after_eval_forward(self, strategy: "SupervisedTemplate", **kwargs):
         super().after_eval_forward(strategy, **kwargs)
-
+        
         with torch.no_grad():
             # Adds mistakes to array
 
@@ -39,12 +51,21 @@ class ClassPrecisionPlugin(SupervisedPlugin):
             self.true = torch.cat((self.true, strategy.mbatch[1]))
 
     def after_eval(self, strategy: "SupervisedTemplate", **kwargs):
+        
 
-        # store
-        # print(classification_report(self.true, self.predictions, output_dict=True))
-
+        used_true = torch.empty((0), dtype=torch.int64).to(self.device)
+        used_pred = torch.empty((0), dtype=torch.int64).to(self.device)
+        value_to_arange = dict()
+        for idx, i in enumerate(self.classes_yet):
+            mask = self.true == i
+            used_true = torch.cat((used_true, self.true[mask]))
+            used_pred = torch.cat((used_pred, self.predictions[mask]))
+            value_to_arange[i] = idx
+            
+        
+        
         self.classifications.append(classification_report(
-            self.true.to('cpu'), self.predictions.to('cpu'), output_dict=True))
+            map_to_arange(used_true.to('cpu'), value_to_arange), map_to_arange(used_pred.to('cpu'), value_to_arange), output_dict=True))
         self.confusion_matrices.append(
             confusion_matrix(self.true.to('cpu'), self.predictions.to('cpu')))
         self.predictions = torch.empty((0), dtype=torch.int64).to(self.device)
