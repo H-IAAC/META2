@@ -7,6 +7,7 @@ from scratch.datasets.processing import apply_fourier_transform
 from scratch.plotting.processing_plots import create_count_histogram, plot_similarity_matrix, plot_clustering
 import configparser
 from scratch.utils.experimentmanager import ExperimentManager
+import abc
 
 class UCIHARDataProcessor():
   '''
@@ -43,7 +44,7 @@ class UCIHARDataProcessor():
       if(use_cfg):
         self.cfgparser = configparser.ConfigParser()
         self.cfgparser.optionxform = str
-        self.cfgparser.read(os.path.join(self.file_path, "Configs", "preprocessing", self.config_file))
+        self.cfgparser.read(os.path.join(self.exp.get_dir_path("configs"), "preprocessing", self.config_file))
         self.persist = self.cfgparser["file"]["persist"]
         self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "UCIHAR")   
         self.folder_name = (str(self.cfgparser["file"]["radix_name"])+ "_" + self.cfgparser["base_parameters"]["time_window"] + "_" + self.cfgparser["base_parameters"]["frequency"])
@@ -60,7 +61,7 @@ class UCIHARDataProcessor():
         self.cfgparser = None
         self.persist = persist
         self.radix_name = radix_name
-        self.file_dir = os.path.join(self.file_path, "Datasets", "Raw", "UCIHAR")   
+        self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "UCIHAR")   
         self.folder_name = (str(radix_name)+ str("_")+ str(time_window) + "_" + str(frequency))
         self.frequency = frequency
         self.time_window = time_window
@@ -70,7 +71,7 @@ class UCIHARDataProcessor():
         self.use_cols = [i for i in self.namecols if i not in self.drop_cols]
         self.processing_time = 0.0
 
-  def get_param_cfg(self) -> configparser.ConfigParser():
+  def get_param_cfg(self) -> configparser.ConfigParser:
     """
     Gets class parameters as ConfigParser
 
@@ -174,7 +175,7 @@ class UCIHARDataProcessor():
     total = total.reindex(columns = correct_column_order)
     
     if(self.persist):
-      destination_dir = os.path.join(self.file_path, "Datasets", "Processed", "UCIHAR", self.folder_name)
+      destination_dir = os.path.join(self.exp.get_dir_path("datasets"), "Processed", "UCIHAR", self.folder_name)
       os.makedirs(destination_dir , exist_ok = True)
 
     if(self.persist):

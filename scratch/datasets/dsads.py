@@ -17,9 +17,9 @@ class DSADSDataProcessor():
 
   def __init__(self, persist : bool = True, use_cfg : bool = True, config_file : str = "DSADS_5_25.cfg",
       radix_name : str = "base", frequency : float = 25.0, time_window : float = 5.0, use_test_data : bool = True,
-      drop_cols : list[str]= [],
-      normalize_cols : list[str] = [],
-      fft_cols : list[str] = []):
+      drop_cols : list= [],
+      normalize_cols : list = [],
+      fft_cols : list = []):
 
       """Constructor
 
@@ -50,7 +50,7 @@ class DSADSDataProcessor():
       if(use_cfg):
         self.cfgparser = configparser.ConfigParser()
         self.cfgparser.optionxform = str
-        self.cfgparser.read(os.path.join(self.file_path, "Configs", "preprocessing", self.config_file))
+        self.cfgparser.read(os.path.join(self.exp.get_dir_path("configs"), "preprocessing", self.config_file))
         self.persist = self.cfgparser["file"]["persist"]
         self.file_dir = os.path.join(self.exp.get_dir_path("datasets"), "Raw", "DSADS")
         self.folder_name = (str(self.cfgparser["file"]["radix_name"])+ "_" + self.cfgparser["base_parameters"]["time_window"] + "_" + self.cfgparser["base_parameters"]["frequency"])
@@ -80,7 +80,7 @@ class DSADSDataProcessor():
         self.use_cols = [i for i in self.namecols if i not in self.drop_cols]
         self.processing_time = 0.0
 
-  def get_param_cfg(self) -> configparser.ConfigParser():
+  def get_param_cfg(self) -> configparser.ConfigParser:
     """
     Gets class parameters as ConfigParser
 

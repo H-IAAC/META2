@@ -95,7 +95,7 @@ def calculate_similarities(distances : np.ndarray) -> np.ndarray:
 
   return similarities
 
-def plot_similarity_matrix(reducer : TSNE, data_label : np.ndarray, label : dict[int, str], filepath : str, title : str):
+def plot_similarity_matrix(reducer : TSNE, data_label : np.ndarray, label : dict, filepath : str, title : str):
 
   """
   Plots similarity matrix and saves it to filepath.
@@ -158,7 +158,7 @@ def plot_clustering(reducer, data_label, labels, title, supervised = False, is_o
   coeficients['lcmc'] = drcoef['lcmc'][neighbors]
   plot_scatter(result, figsize = (10, 10), title=title, labels = labels, filepath = filepath, filename = filename, coeficients = coeficients)
 
-def create_count_histogram(df : pd.DataFrame, activities : dict[int, str], filepath : str, num_subjects : int = 9):
+def create_count_histogram(df : pd.DataFrame, activities : dict, filepath : str, num_subjects : int = 9):
   """
   Creates activity count histograms, for all subjects, and creates a bar plot for each one representing the normalized activity count. Saves in filepath.
 

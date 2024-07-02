@@ -14,16 +14,26 @@ class ExperimentManager:
     def __init__(self) -> None:
 
         # Set the absolute path to the main directory
-        self.__main_dir_name = "work-meta2"  # TODO change to 'work' for DL-28
-        self.__main_dir_path = os.path.dirname(os.path.realpath(__file__))
-        while os.path.basename(self.__main_dir_path) != self.__main_dir_name:
-            self.__main_dir_path = os.path.dirname(self.__main_dir_path)
-
-        self.__save_exp = False  # Default values
+        self._main_dir_name = "meta2"  # NOTE: change to 'work' for DL-28
+        self._main_dir_path = os.path.dirname(os.path.realpath(__file__))
+        depth = 0
+        while os.path.basename(self._main_dir_path) != self._main_dir_name:
+            depth += 1
+            if depth == 10:
+                raise Exception("Main folder not found.")
+            self._main_dir_path = os.path.dirname(self._main_dir_path)
+        self._main_dir_name = "meta2"  # NOTE: change to 'work' for DL-28
+        self._main_dir_path = os.path.dirname(os.path.realpath(__file__))
+        depth = 0
+        while os.path.basename(self._main_dir_path) != self._main_dir_name:
+            depth += 1
+            if depth == 10:
+                raise Exception("Main folder not found.")
+            self._main_dir_path = os.path.dirname(self._main_dir_path)
 
         # Creates an environment parser and read the config file
         env_cfg_path = os.path.join(
-            self.__main_dir_path, 'Configs/init/environment.cfg')
+            self._main_dir_path, 'Configs/init/environment.cfg')
 
         assert os.path.isfile(
             env_cfg_path), f"{os.path.realpath(env_cfg_path)} is not a valid file!"
@@ -32,31 +42,30 @@ class ExperimentManager:
         self.env_parser.read(env_cfg_path)
 
         # init time
-        #self.__init_time = self.currentTime()
+        self._init_time = self.currentTime()
 
         # Handling modifications received from the command line;
-        #self.__argparser = argparse.ArgumentParser()
-        # self.__argparser.add_argument('-t', '--tag') # TODO: Handle commented arguments
-        # self.__argparser.add_argument('-d', '--dataset')
-        # self.__argparser.add_argument('-s', '--strategy')
-        # self.__argparser.add_argument('-e', '--epochs')
-        # self.__argparser.add_argument('--save_tag')
-        #self.__argparser.add_argument('--save_exp', action='store_true')
+        self._argparser = argparse.ArgumentParser()
+        self._argparser.add_argument('-s', '--strategy')
+        self._argparser.add_argument('-b', '--benchmark')
+        self._argparser.add_argument('--training_epochs', type=int, default=6)
+        
+        self._argparser.add_argument('--batch_size', type=int, default=32)
+        self._argparser.add_argument('--weight_decay', type=float, default=1e-4)
+        self._argparser.add_argument('--learning_rate', type=float, default=1e-3)
+        self._argparser.add_argument('--plasticity_factor', type=float, default=1.0)
+        self._argparser.add_argument('--experiment_file', type=str, default='default.cfg')
+        self._argparser.add_argument('--save', type=bool, default=True)
 
-        #self.__args = self.__argparser.parse_args()
+        self._args = self._argparser.parse_args()
 
-        # if self.__args.tag:
-        #     self.readFromFile(os.path.join(
-        #                         os.path.join(self.main_dir_path,
-        #                         self.getstr("TAGS_DIRECTORY")), f"{self.__args.tag}.cfg"))
-        # if self.__args.dataset:
-        #     self.updateAttr('dataset', self.__args.dataset)
-        # if self.__args.strategy:
-        #     self.updateAttr('strategy', self.__args.strategy)
-        # if self.__args.epochs:
-        #     self.updateAttr('epochs', self.__args.epochs)
-        #if self.__args.save_exp:
-        #    self.__save_exp = True
+        self.save_experiment = False  # TODO: turn into a property
+        if self._args.save:
+            self.save_experiment = True
+
+        if self._args.experiment_file:
+            self.env_parser.set('results', 'experiment_file',
+                                str(self._args.experiment_file))
 
     def __new__(cls):
         '''
@@ -66,20 +75,9 @@ class ExperimentManager:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __del__(self):
-        # set end_time
-        self.__end_time = self.currentTime()
-
-        # Save experiment
-        if self.__save_exp:
-            self.__save_experiment()
-
-        # Save tag
-        # if self.__args.save_tag:
-            # self.saveTag(self.__args.save_tag)
-
     def currentTime(self) -> str:
-        return str(datetime.now())[:-7]  # Ignore miliseconds
+        
+        return datetime.now().strftime("%Y%m%d_%H%M%S")# Ignore miliseconds
 
     def read_experiment(self, cfg_path: str) -> None:
         '''
@@ -91,35 +89,142 @@ class ExperimentManager:
 
         self.exp_parser = configparser.ConfigParser()
         self.exp_parser.read(cfg_path)
+    
+        # reads strategy from experiment config file or from argument line command
+
+        #commenting line to adequate to designed architecture
+        '''
+        if self._args.strategy:
+            self._read_strategy_from_file(self._args.strategy)
+        else:
+            self._read_strategy_from_file(
+                self.exp_parser.get('experiment', 'strategy'))
+        '''
+                
+
+        # changes the number of epochs if specified on the command line.
+        if not self.exp_parser.has_section('training'):
+            self.exp_parser.add_section('training')
+
+        if self._args.training_epochs:
+            self.exp_parser.set('training', 'epochs',
+                                str(self._args.training_epochs))
+            
+        if self._args.plasticity_factor:
+            self.exp_parser.set('training', 'plasticity_factor',
+                                str(self._args.plasticity_factor))
+
+        if self._args.batch_size:
+            self.exp_parser.set('training', 'batch_size',
+                                str(self._args.batch_size))
+            
+        if self._args.weight_decay:
+            self.exp_parser.set('training', 'weight_decay',
+                                str(self._args.weight_decay))
+            
+        if self._args.learning_rate:
+            self.exp_parser.set('training', 'learning_rate',
+                                str(self._args.learning_rate))
+            
+        
+        # reads benchmark from experiment config file or from argument line command
+            
+        #commenting line to adequate to designed architecture
+        '''
+        if self._args.benchmark:
+            self._read_benchmark_from_file(self._args.benchmark)
+        else:
+            self._read_benchmark_from_file(
+                self.exp_parser.get('experiment', 'benchmark'))
+        '''
+
+        # create folders to save experiment info
+        if self._args.save:
+            self._init_exp_folder()
 
         return
 
-    def save_experiment(self):
-        '''
-        The method that specifies that the class should save experiment information upon completion.
-        '''
-        self.__save_exp = True
+    def _read_strategy_from_file(self, strategy: str) -> None:
+        # read experiment's strategy from a cfg file.
 
-    def __save_experiment(self):
-        results_path = os.path.join(self.get_dir_path("results"),
-                                    self.exp_parser.get("DEFAULT", "dataset"),
-                                    self.exp_parser.get("DEFAULT", "strategy"),
-                                    self.__init_time,)
+        strategy_path = os.path.join(self.get_dir_path(
+            'strategies'), f"{strategy}.cfg")
+        assert os.path.isfile(
+            strategy_path), f'{strategy_path} is not a valid config file!'
+
+        self.exp_parser.read(os.path.join(self.get_dir_path(
+            'strategies'), strategy_path))
+        return
+
+    def _read_benchmark_from_file(self, benchmark: str) -> None:
+        # read experiment's benchmark from a cfg file.
+
+        benchmark_path = os.path.join(self.get_dir_path(
+            'benchmarks'), f"{benchmark}.cfg")
+        assert os.path.isfile(
+            benchmark_path), f'{benchmark_path} is not a valid config file!'
+
+        self.exp_parser.read(os.path.join(self.get_dir_path(
+            'strategies'), benchmark_path))
+        return
+
+    def _init_exp_folder(self):
+        self._exp_folder = os.path.join(self.get_dir_path("results"),
+                                        self.exp_parser.get(
+            "benchmark", "name"),
+            self.exp_parser.get(
+            "strategy", "name"),
+            self._init_time,)
+
+        os.makedirs(self._exp_folder)
 
         # Create the directories to save the results
-        os.makedirs(os.path.join(results_path, self.env_parser.get(
-            "results", "graphs_directory")))
-        os.makedirs(os.path.join(
-            results_path, self.env_parser.get("results", "logs_directory")))
-        os.makedirs(os.path.join(
-            results_path, self.env_parser.get("results", "model_directory")))
+        # os.makedirs(os.path.join(results_path, self.env_parser.get(
+        #     "results", "graphs_directory")))
+        # os.makedirs(os.path.join(
+        #     results_path, self.env_parser.get("results", "logs_directory")))
+        # os.makedirs(os.path.join(
+        #     results_path, self.env_parser.get("results", "model_directory")))
 
         # # Save the experiment settings
         # cfg_path = os.path.join(results_path, self.getstr("exp_settings_file"))
         # with open(cfg_path, 'w') as cfgfile:
         #         self.__tag.write(cfgfile)
 
-    def saveTag(self, name: str):
+    def set_scenario_params(self, param_dict):
+        if not self.exp_parser.has_section('scenario_configs'):
+            self.exp_parser.add_section('scenario_configs')
+
+        for i in param_dict:
+            self.exp_parser.set(section='scenario_configs', option=i,
+                            value= str(param_dict[i]))
+            
+    def set_dataset_params(self, dataset_cfg):
+        if not self.exp_parser.has_section('dataset_configs'):
+            self.exp_parser.add_section('dataset_configs')
+
+        cfgparser = self.new_parser("placeholder_parser")
+        cfgparser.optionxform = str
+        
+        cfgparser.read(os.path.join(self.get_dir_path("preprocessing"), dataset_cfg))
+        
+        #base parameterss
+        for i in cfgparser['base_parameters']:
+            self.exp_parser.set(section='dataset_configs', option=i,
+                            value= str(cfgparser['base_parameters'][i]))
+       
+       #use columns
+        self.exp_parser.set(section='dataset_configs', option='used_sensors',
+                        value= str([i for i in cfgparser['use_cols'] if cfgparser['use_cols'].getboolean(i)]))
+
+
+    @property
+    def exp_folder(self):
+        assert 'exp_parser' in self.__dict__, "You must setup an experiment. Use read_experiment method."
+
+        return self._exp_folder
+
+    # def saveTag(self, name: str):
         # path = os.path.join(self.getDirectoryPath("TAGS_DIRECTORY"), f'{name}.cfg')
         # if os.path.isfile(path):
         #     overwrite = input(f"The tag {name} already exists - overwrite?\n[y/n] ")
@@ -133,7 +238,7 @@ class ExperimentManager:
         #     with open(path, 'w') as cfgfile:
         #         self.__tag.write(cfgfile)
         #     print(f"The tag {name} has been saved.")
-        pass
+        # pass
 
     def new_parser(self, name: str, cfg_path=None):
         '''
@@ -197,6 +302,16 @@ class ExperimentManager:
 
         return os.path.join(self.main_dir_path, self.env_parser["directories"][dir_name])
 
+    def get_plugins_list(self) -> list:
+        try:
+            plugins = self.exp_parser.get('strategy', 'plugins').split(', ')
+        except AttributeError:
+            print("You must define a experiment config file.")
+            plugins = []
+
+        return plugins
+    
+
     @property
     def main_dir_path(self):
-        return self.__main_dir_path
+        return self._main_dir_path
