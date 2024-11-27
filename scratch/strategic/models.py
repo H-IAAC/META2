@@ -24,13 +24,11 @@ class BaseConvolutionalModel(nn.Module):
     def make_conv_block(self, input_channels, output_channels, kernel_size=3):
         return nn.Sequential(
             nn.Conv2d(input_channels, output_channels, kernel_size),
-            nn.BatchNorm2d(output_channels),
             nn.LeakyReLU(0.2)
         )
 
     def forward(self, x):
-
-        return self.conv(x)
+        return self.conv(torch.unsqueeze(x, 1))
 
 
 class FullyConnectedNetwork(nn.Module):
@@ -179,3 +177,130 @@ class Microtransformer(nn.Module):
         logits = self.lm_head(x) # (B, C)  # C: classes
 
         return logits
+
+
+
+class HARTransformer(nn.Module):
+
+    def __init__(self, input_shape, nhead, num_layers, num_classes, dropout = 0.15, sensor_group = 3):
+        
+        super(HARTransformer, self).__init__()
+
+        self.batch, self.height, self.width = input_shape
+        self.num_classes = num_classes
+
+        for i in range(25, 1, -1):
+            if self.height % i == 0:
+                wordsize = i
+                break
+
+        dim_feedforward = self.height*self.width*2
+        d_model = (self.width//sensor_group)*(self.height//wordsize)*22
+
+        self.d_model = d_model
+        self.norm = nn.LayerNorm(d_model)
+
+        self.layers = nn.ModuleList([
+            nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward, dropout=dropout)
+            for _ in range(num_layers)
+        ])
+
+        self.conv = nn.Sequential(
+            self.make_conv_block(1, 22, kernel_size=(wordsize, sensor_group), stride=(wordsize, sensor_group)),
+            nn.Flatten(), #batch, (w//sensor_group)*(height-2)
+        )
+
+        self.classification = nn.Linear(in_features=self.d_model, out_features = self.num_classes)
+
+    def make_conv_block(self, input_channels, output_channels, kernel_size=3, stride = 1):
+        return nn.Sequential(
+            nn.Conv2d(input_channels, output_channels, kernel_size, stride=stride),
+            nn.LeakyReLU(0.2)
+        )
+    
+    
+    def forward(self, x):
+        
+        x = torch.unsqueeze(self.conv(torch.unsqueeze(x, 1)), 1)
+        
+        x = x.permute(1, 0, 2)
+        
+        # Multihead attention block
+        for layer in self.layers:
+            x = layer(x)
+        
+        x = self.norm(x)
+        
+        # Permute back to (batch_size, 1, n)
+        x = x.permute(1, 0, 2)
+        return torch.squeeze(self.classification(x), 1)
+    
+
+class CrossAttnHARTransformer(nn.Module):
+
+    def __init__(self, input_shape, nhead, num_classes, dropout = 0.15, sensor_group = 3, wordsize = 64):
+        
+        super(CrossAttnHARTransformer, self).__init__()
+
+        self.batch, self.height, self.width = input_shape
+        self.num_classes = num_classes
+
+        for i in range(12, 1, -1):
+            if self.height % i == 0:
+                kernelsize = i
+                break
+
+        dim_feedforward = self.height*self.width*2
+        d_model = (self.width//sensor_group)*(self.height//kernelsize)//2
+
+        self.d_model = d_model
+        self.dropout_att = nn.Dropout(dropout)
+        
+        embed_dim = (self.width//sensor_group)*(self.height//kernelsize)//2
+        
+        self.norm_acc = nn.LayerNorm(embed_dim)
+        self.norm_gyro = nn.LayerNorm(embed_dim)
+        self.cross_att = nn.MultiheadAttention(embed_dim, nhead)
+        self.norm_cross = nn.LayerNorm(embed_dim)
+        self.norm_ff = nn.LayerNorm(embed_dim*wordsize)
+        self.conv = nn.Sequential(
+            self.make_conv_block(1, wordsize, kernel_size=(kernelsize, sensor_group), stride=(kernelsize, sensor_group)),
+        )
+
+        self._ff = self.make_ff_block(embed_dim*wordsize, embed_dim*wordsize*2, dropout=dropout)
+        self._ff2 = self.make_ff_block(embed_dim*wordsize, embed_dim*wordsize*2, dropout=dropout)
+        self.classification = nn.Linear(in_features=embed_dim*wordsize, out_features = self.num_classes)
+
+    def make_ff_block(self, input_channels, output_channels, dropout=0.15):
+        return nn.Sequential(
+            nn.Linear(input_channels, output_channels),
+            nn.LeakyReLU(0.2),
+            nn.Dropout(dropout),
+            nn.Linear(output_channels, input_channels),
+            nn.LeakyReLU(0.2),
+            nn.Dropout(dropout)
+        )
+
+    def make_conv_block(self, input_channels, output_channels, kernel_size=3, stride = 1):
+        return nn.Sequential(
+            nn.Conv2d(input_channels, output_channels, kernel_size, stride=stride),
+            nn.LeakyReLU(0.2)
+        )
+    
+    
+    def forward(self, x):
+        
+        x = self.conv(torch.unsqueeze(x, 1))
+        
+        x_acc = torch.flatten(x[:, :, :, ::2], start_dim = -2).permute(1, 0, 2)
+        x_gyro = torch.flatten(x[:, :, :, 1::2], start_dim = -2).permute(1, 0, 2)
+        
+        x = self.cross_att(x_acc, x_gyro, x_gyro)[0]
+        
+        x = self.dropout_att(x)
+        
+        x = torch.flatten(x.permute(1, 0, 2), -2)
+        
+        x = self._ff(x)
+        
+        return torch.squeeze(self.classification(x), 1)

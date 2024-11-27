@@ -60,7 +60,7 @@ def save_test_stream_metrics(avalanche_metrics, sklearn_metrics, exp_dir):
     line_plots(forgetting_per_exp, "Forgetting de teste por tarefa",
                os.path.join(exp_dir, 'plots', 'forgetting_per_exp.png'), "Forgetting")
 
-    # f1 score macro and weighted exp: metric
+    # f1 score macro, weighted and micro per exp: metric
     f1_macro_per_exp = {i: sklearn_metrics.classifications[i]['macro avg']
                         ['f1-score'] for i in range(len(sklearn_metrics.classifications))}
     result_dict['F1-macro de teste por tarefa'] = list(f1_macro_per_exp.values())
@@ -73,6 +73,12 @@ def save_test_stream_metrics(avalanche_metrics, sklearn_metrics, exp_dir):
     result_dict['F1-weighted de teste por tarefa'] = list(f1_weighted_per_exp.values())
     line_plots(f1_weighted_per_exp, "F1-weighted de teste por tarefa",
                os.path.join(exp_dir, 'plots', 'f1_weighted.png'), "f1-weighted", y_range=(0, 1.05))
+
+    f1_micro_per_exp = {i: sklearn_metrics.classifications[i]['F1-micro']
+                         for i in range(len(sklearn_metrics.classifications))}
+    result_dict['F1-micro de teste por tarefa'] = list(f1_micro_per_exp.values())
+    line_plots(f1_micro_per_exp, "F1-micro de teste por tarefa",
+               os.path.join(exp_dir, 'plots', 'f1_micro.png'), "f1-micro", y_range=(0, 1.05))
 
     # heatmap plot per exp
     
