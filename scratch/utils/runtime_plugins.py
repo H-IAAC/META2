@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from avalanche.training.templates import SupervisedTemplate
 from avalanche.core import SupervisedPlugin
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 import operator
 import warnings
 from copy import deepcopy
@@ -62,10 +62,11 @@ class ClassPrecisionPlugin(SupervisedPlugin):
             used_pred = torch.cat((used_pred, self.predictions[mask]))
             value_to_arange[i] = idx
             
-        
-        
-        self.classifications.append(classification_report(
-            map_to_arange(used_true.to('cpu'), value_to_arange), map_to_arange(used_pred.to('cpu'), value_to_arange), output_dict=True))
+        report = classification_report(
+            map_to_arange(used_true.to('cpu'), value_to_arange), map_to_arange(used_pred.to('cpu'), value_to_arange), output_dict=True)
+        report['F1-micro'] = f1_score(map_to_arange(used_true.to('cpu'), value_to_arange), map_to_arange(used_pred.to('cpu'), value_to_arange), average='micro')
+       
+        self.classifications.append(report)
         self.confusion_matrices.append(
             confusion_matrix(self.true.to('cpu'), self.predictions.to('cpu')))
         self.predictions = torch.empty((0), dtype=torch.int64).to(self.device)

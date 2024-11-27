@@ -162,7 +162,7 @@ class PAMAP2DataProcessor():
 
       # Modified
       rdparser.read(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "PAMAP2", i, "configs.cfg"))
-        
+       
       if not (False in [self.cfgparser[i] == rdparser[i] for i in self.cfgparser.sections() if i != "file"]):
           print("Found processed data according to pre-processing, copying data...")
           total_df = pd.read_table(os.path.join(self.exp.get_dir_path("datasets"), "Processed", "PAMAP2", i, "dataset.csv"), sep='\s+')
