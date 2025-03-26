@@ -107,7 +107,7 @@ class TrainEarlyStoppingPlugin(SupervisedPlugin):
             better.
         """
         super().__init__()
-        
+        self.device =  torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.patience = patience
         self.margin = margin
 
@@ -125,7 +125,8 @@ class TrainEarlyStoppingPlugin(SupervisedPlugin):
         if epoch_loss + self.margin < self.best_loss:
             self.best_loss = strategy.loss
             self.best_step = self._get_strategy_counter(strategy)
-            self.best_state = deepcopy(strategy.model.state_dict())
+            self.best_state = deepcopy(strategy.model.to('cpu').state_dict())
+            strategy.model.to(self.device)
         
     def after_training_epoch(self, strategy, **kwargs):
         

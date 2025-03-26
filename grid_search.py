@@ -17,16 +17,16 @@ for i in range(7):
 
 commands = []
 datasets = ['hapt']
-strategies = ['wamdf_cross']
-lrs = [0.001, 0.0005, 0.0001, 0.00005]
-decays = [0.001, 0.0001, 0.00001]
+strategies = ['wamdf']
+lrs = [5e-5]
+decays = [0.0001]
 
-for _ in range(7):
+for _ in range(17):
     for dataset in datasets:
         for strategy in strategies:
             for lr in lrs:
                 for decay in decays:
-                        commands.append(['python', '.\\Codigos\\run_experiment.py', '--learning_rate', str(lr), '--training_epochs', '30',
+                        commands.append(['python', '.\\Codigos\\run_experiment.py', '--learning_rate', str(lr), '--training_epochs', '20',
                             '--weight_decay', str(decay), '--experiment_file', f'{dataset}_{strategy}.cfg'])
 
 for command in tqdm(commands):

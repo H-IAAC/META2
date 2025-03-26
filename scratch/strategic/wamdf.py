@@ -24,7 +24,7 @@ class WAMDFPlugin(SupervisedPlugin):
           strategy.model.state_dict()[list(strategy.model.state_dict().keys())[-1]].data.copy_(torch.zeros_like(strategy.model.state_dict()[list(strategy.model.state_dict().keys())[-1]].data))
 
     def after_update(self, strategy: "SupervisedTemplate", **kwargs):
-
+      
       if(len(self.old_classes) > 0)  :
         norm_old = 0
         norm_new = 0

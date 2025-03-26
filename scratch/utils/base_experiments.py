@@ -6,6 +6,7 @@ import os
 from scratch.utils.experimentmanager import ExperimentManager
 from scratch.plotting import save_test_stream_metrics
 import json
+import torch
 
 def get_scenario_dict(exp):
     scenario_dict = dict()
@@ -39,6 +40,7 @@ def run_base_experiment(benchmark, strategy, eval_plugin, sklearn_metrics_plugin
     for experience in benchmark.train_stream:
         print("Start of experience: ", experience.current_experience)
         print("Current Classes: ", experience.classes_in_this_experience)
+        print("Memory summary:\n" + torch.cuda.memory_summary(device=torch.device('cuda')))
 
         strategy.train(experience)
         print('Training completed')

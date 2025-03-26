@@ -1,6 +1,9 @@
 import torch
 from torch import nn
-
+import torch.nn.functional as F
+import math
+import loralib as lora
+import gc
 
 class BaseConvolutionalModel(nn.Module):
 
@@ -303,4 +306,217 @@ class CrossAttnHARTransformer(nn.Module):
         
         x = self._ff(x)
         
+        return torch.squeeze(self.classification(x), 1)
+
+import math
+
+class LoRAMultiheadAttention(nn.MultiheadAttention):
+    def __init__(self, embed_dim, num_heads, dropout=0.0, *args, **kwargs):
+        super().__init__(embed_dim, num_heads, dropout=dropout, bias=True, *args, **kwargs)
+        self.has_adapted = False
+        
+    def adapt_rank(self, rank_percentage):
+        
+        if self.has_adapted:
+            delta_in_proj = self.lora_B_in @ self.lora_A_in  # shape (3*embed_dim, embed_dim)
+            self.in_proj_weight.data += delta_in_proj
+
+            delta_out_proj = self.lora_B_out @ self.lora_A_out  # shape (embed_dim, embed_dim)
+            self.out_proj.weight.data += delta_out_proj
+
+        # Freeze original parameters
+        self.in_proj_weight.requires_grad_(False)
+        if self.in_proj_bias is not None:
+            self.in_proj_bias.requires_grad_(False)
+        self.out_proj.weight.requires_grad_(False)
+        if self.out_proj.bias is not None:
+            self.out_proj.bias.requires_grad_(False)
+        
+        self.has_adapted = True
+        
+        # Initialize LoRA parameters for in_proj (combined q, k, v)
+        self.lora_A_in = nn.Parameter(torch.zeros(max(int(rank_percentage*self.embed_dim), 4), self.embed_dim))
+        self.lora_B_in = nn.Parameter(torch.zeros(3 * self.embed_dim, max(int(rank_percentage*self.embed_dim), 4)))
+        nn.init.normal_(self.lora_A_in, mean=0.0, std=0.02)
+        nn.init.zeros_(self.lora_B_in)
+
+        # Initialize LoRA parameters for out_proj
+        self.lora_A_out = nn.Parameter(torch.zeros(max(int(rank_percentage*self.embed_dim), 4), self.embed_dim))
+        self.lora_B_out = nn.Parameter(torch.zeros(self.embed_dim, max(int(rank_percentage*self.embed_dim), 4)))
+        nn.init.normal_(self.lora_A_out, mean=0.0, std=0.02)
+        nn.init.zeros_(self.lora_B_out)
+
+    def forward(self, query, key, value, key_padding_mask=None, need_weights=False, attn_mask=None, is_causal=False):
+
+        if self.has_adapted:
+            # Compute LoRA adjustments
+            delta_in_proj = self.lora_B_in @ self.lora_A_in  # shape (3*embed_dim, embed_dim)
+            adjusted_in_proj_weight = self.in_proj_weight + delta_in_proj
+
+            delta_out_proj = self.lora_B_out @ self.lora_A_out  # shape (embed_dim, embed_dim)
+            adjusted_out_proj_weight = self.out_proj.weight + delta_out_proj
+
+        else:
+            adjusted_in_proj_weight = self.in_proj_weight
+            adjusted_out_proj_weight = self.out_proj.weight
+
+        # Call the functional multi-head attention
+        attn_output, attn_weights = F.multi_head_attention_forward(
+            query,
+            key,
+            value,
+            self.embed_dim,
+            self.num_heads,
+            adjusted_in_proj_weight,
+            self.in_proj_bias,
+            self.bias_k,
+            self.bias_v,
+            self.add_zero_attn,
+            self.dropout,
+            adjusted_out_proj_weight,
+            self.out_proj.bias,
+            training=self.training,
+            key_padding_mask=key_padding_mask,
+            need_weights=need_weights,
+            attn_mask=attn_mask,
+            use_separate_proj_weight=False,
+            q_proj_weight=None,
+            k_proj_weight=None,
+            v_proj_weight=None,
+            is_causal=is_causal
+        )
+        return attn_output, attn_weights
+
+def merge_AB(layer):
+      def T(w):
+        return w.transpose(0, 1) if layer.fan_in_fan_out else w
+      with torch.no_grad():
+        layer.weight.data += T(layer.lora_B @ layer.lora_A)*layer.scaling
+        nn.init.zeros_(layer.lora_B)
+
+def copy_linear_to_lora(layer, percentage_rank):
+      
+      rank = max(int(min(layer.weight.shape[1], layer.weight.shape[0]) * (percentage_rank)), 4)
+      new_layer = lora.Linear(layer.weight.shape[1], layer.weight.shape[0], r = rank).to(layer.weight.device)
+      new_layer.weight = layer.weight
+      new_layer.weight.requires_grad = False
+      new_layer.bias = layer.bias
+      nn.init.zeros_(new_layer.bias)
+      new_layer.bias.requires_grad = False
+        
+      return new_layer
+
+class LoraTransformerEncoderLayer(nn.TransformerEncoderLayer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.self_attn = LoRAMultiheadAttention(embed_dim=kwargs["d_model"],num_heads= kwargs["nhead"], dropout=kwargs["dropout"])
+        self.has_adapted = False
+
+    def adapt_rank(self, percentage_rank):
+
+        self.self_attn.adapt_rank(percentage_rank)
+
+        if self.has_adapted:
+            merge_AB(self.linear1)
+            merge_AB(self.linear2)
+        
+        self.has_adapted = True
+        self.new1 = copy_linear_to_lora(self.linear1, percentage_rank)
+        self.new2 = copy_linear_to_lora(self.linear2, percentage_rank)
+
+        delattr(self, 'linear1')
+        delattr(self, 'linear2')
+
+        self.linear1 = self.new1
+        self.linear2 = self.new2
+
+        delattr(self, 'new1')
+        delattr(self, 'new2')
+
+        gc.collect()
+        torch.cuda.empty_cache()
+
+class LoraHARTransformer(nn.Module):
+
+    def __init__(self, input_shape, nhead, num_layers, num_classes, dropout = 0.15, sensor_group = 3, plas = 0.95):
+
+        super(LoraHARTransformer, self).__init__()
+
+        self.batch, self.height, self.width = input_shape
+        self.num_classes = num_classes
+        self.has_adapted = False
+        self.current_step = 0
+        self.plas = plas
+
+        for i in range(25, 1, -1):
+            if self.height % i == 0:
+                wordsize = i
+                break
+
+        dim_feedforward = self.height*self.width*2
+        d_model = (self.width//sensor_group)*(self.height//wordsize)*44
+
+        self.d_model = d_model
+        self.norm = nn.LayerNorm(d_model)
+
+        self.layers = nn.ModuleList([
+            LoraTransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward, dropout=dropout)
+            for _ in range(num_layers)
+        ])
+
+        self.conv = nn.Sequential(
+            self.make_conv_block(1, 44, kernel_size=(wordsize, sensor_group), stride=(wordsize, sensor_group)),
+            nn.Flatten(), #batch, (w//sensor_group)*(height-2)
+        )
+
+        self.classification = nn.Linear(in_features=self.d_model, out_features = self.num_classes)
+        
+    def make_conv_block(self, input_channels, output_channels, kernel_size=3, stride = 1):
+        return nn.Sequential(
+            nn.Conv2d(input_channels, output_channels, kernel_size, stride=stride),
+            nn.LeakyReLU(0.2)
+        )
+
+    '''    def adapt_rank(self, percentage_rank):
+
+        if self.has_adapted:
+            self.merge_AB(self.classification)
+              
+        self.has_adapted = True
+        self.new1 = copy_linear_to_lora(self.classification, percentage_rank)
+        
+        delattr(self, 'classification')
+
+        self.classification = self.new1
+
+        delattr(self, 'new1')
+
+        gc.collect()
+        torch.cuda.empty_cache()'''
+
+    def calculate_percentage_rank(self):
+        self.current_step += 1
+        return 1/2 + (1/2*(self.plas**self.current_step))
+
+    def experience_end(self):
+      percentage = self.calculate_percentage_rank()
+
+      for layer in self.layers:
+        layer.adapt_rank(percentage)
+
+    def forward(self, x):
+
+        x = torch.unsqueeze(self.conv(torch.unsqueeze(x, 1)), 1)
+
+        x = x.permute(1, 0, 2)
+
+        # Multihead attention block
+        for layer in self.layers:
+            x = layer(x)
+
+        x = self.norm(x)
+
+        # Permute back to (batch_size, 1, n)
+        x = x.permute(1, 0, 2)
         return torch.squeeze(self.classification(x), 1)

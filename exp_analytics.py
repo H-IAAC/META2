@@ -119,15 +119,28 @@ if __name__ == '__main__':
     
     for scenario in ["HAPT_TI"]:
         best_params = [(i[1], best_param_dict[i]) for i in best_param_dict if scenario in i]
-        labels = ["wamdf", "waadb", "transf_wamdf", "onechannel_wamdf", "cross_wamdf"]
+        labels = ["transf_wamdf"]
         matches = []
         for strat in labels:
-            print(list(get_best(scenario, strat, "F1-macro de teste por tarefa", 'learning_rate', 'weight_decay').values())[0][0])
-            best_p = list(get_best(scenario, strat, "F1-macro de teste por tarefa", 'learning_rate', 'weight_decay').values())[0][0]
-            
+            if "meta" not in strat:
+                print(list(get_best(scenario, strat, "F1-macro de teste por tarefa", 'learning_rate', 'weight_decay').values())[0][0])
+                best_p = list(get_best(scenario, strat, "F1-macro de teste por tarefa", 'learning_rate', 'weight_decay').values())[0][0]
+            else:
+                print(list(get_best(scenario, strat, "F1-macro de teste por tarefa", 'learning_rate', 'weight_decay', 'meta_plasticity').values())[0][0])
+                best_p = list(get_best(scenario, strat, "F1-macro de teste por tarefa", 'learning_rate', 'weight_decay', 'meta_plasticity').values())[0][0]
             values = np.array(retrieve_values(scenario, strat, "F1-macro de teste por tarefa", best_p))
             matches.append(values)
-        get_figure(matches, scenario, labels, "transformers_comparison")
+
+        a = list(retrieve_values(scenario, "lora_transf_wamdf_metaplasticity_spread", "F1-macro de teste por tarefa", ('0.0005', '0.001', '0.9')))
+        a = np.array(a)
+        print(a.shape)
+        print(np.mean(a[:, 1:], axis=(0,1)))
+        print(list(retrieve_values(scenario, "transf_wamdf", "F1-macro de teste por tarefa", ('5e-05', '0.0001'))))
+        matches.append(list(retrieve_values(scenario, "transf_wamdf", "F1-macro de teste por tarefa", ('5e-05', '0.0001'))))
+        matches.append(list(retrieve_values(scenario, "lora_transf_wamdf_metaplasticity_spread", "F1-macro de teste por tarefa", ('0.0005', '0.001', '0.9'))))
+        labels += ["transf_wamdf", "lora_transf_wamdf_metaplasticity_spread"]
+        print(len(matches))
+        #get_figure(matches, scenario, labels, "_lora_metaplas_and_normal")
         #get_figure(best_params, scenario, '_transf')
  
 

@@ -1,6 +1,6 @@
 from typing import Optional, Sequence, List, Union
 import math
-
+import logging
 from torch.nn import Module, CrossEntropyLoss
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
@@ -212,3 +212,51 @@ class MetaPlasticityStrategy(SupervisedTemplate):
         
     def before_training_exp(self,  strategy: "SupervisedTemplate", **kwargs):
         self.scheduler.update_list(get_plasticity_lrs((self.meta_plasticity_factor)**strategy.experience.current_experience, self.lr_base, self.model))
+
+
+class MetaPlasticityLora(SupervisedTemplate):
+
+    def __init__(
+        self,
+        model: Module,
+        optimizer: Optimizer,
+        criterion=CrossEntropyLoss(),
+        train_mb_size: int = 1,
+        train_epochs: int = 1,
+        eval_mb_size: Optional[int] = None,
+        device=None,
+        plugins: Optional[List[SupervisedPlugin]] = None,
+        evaluator: EvaluationPlugin = default_evaluator,
+        eval_every=-1,
+        **base_kwargs
+    ):
+        super().__init__(
+            model,
+            optimizer,
+            criterion,
+            train_mb_size=train_mb_size,
+            train_epochs=train_epochs,
+            eval_mb_size=eval_mb_size,
+            device=device,
+            plugins=plugins,
+            evaluator=evaluator,
+            eval_every=eval_every,
+            **base_kwargs
+        )
+
+    def _after_training_exp(self, **kwargs):
+        
+        super()._after_training_exp(**kwargs)
+        self.model.experience_end()
+        
+    def _after_eval_exp(self, **kwargs):
+        
+        return super()._after_eval_exp(**kwargs)
+    
+    def _before_training_exp(self, **kwargs):
+       
+
+        return super()._before_training_exp(**kwargs)
+
+        
+    
